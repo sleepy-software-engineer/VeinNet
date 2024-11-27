@@ -1,4 +1,2 @@
-# BiometricSystems
-
-Dataset Link http://biometrics.idealtest.org/dbDetailForUser.do?id=6#/datasetDetail/5
-
+# HandFusionNet: Multi-Feature Biometric Recognition Using Neural Networks
+> todo
