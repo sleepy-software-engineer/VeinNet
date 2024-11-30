@@ -2,68 +2,95 @@ import glob
 import cv2
 import numpy as np
 import os
+from palm.dataprocessor import VeinImageProcessor
+import matplotlib.pyplot as plt
+
+DATASET_PATH = "/home/lucian/University/MSc-Courses/BiometricSystems/data/"
+PATIENTS = [f"{i:03}" for i in range(1, 101)] 
+HAND = "l"  
+SPECTRUM = "940" 
+BATCH_SIZE = 1
+OUTPUT_DIR = "/home/lucian/University/MSc-Courses/BiometricSystems/src/palm/out/" 
 
 class VeinImageDataLoader:
     def __init__(self, dataset_dir, batch_size=1):
         self.dataset_dir = dataset_dir
         self.batch_size = batch_size
+        self.processor = VeinImageProcessor()  
 
     def _load_images(self, person_id, hand, spectrum):
         pattern = f"{person_id}_{hand}_{spectrum}_*.jpg"
         matching_files = glob.glob(os.path.join(self.dataset_dir, pattern))
         return matching_files
 
-    def _preprocess_image(self, image_path):
-        # Read the image in grayscale
-        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    def _prepare_cnn_input(self, images, target_size=(128, 128)):
+        """
+        Preprocess images for CNN input.
+        Args:
+            images (list): List of image paths.
+            target_size (tuple): Target size for resizing images (height, width).
+        Returns:
+            np.ndarray: Preprocessed images in CNN-compatible format.
+        """
+        preprocessed_images = [self.processor.preprocess_image(img) for img in images]
 
-        # Crop and blur the image
-        cropped_image = image[:, :image.shape[1] - 120]
-        blurred = cv2.GaussianBlur(cropped_image, (5, 5), 0)
-        
-        # Threshold the image
-        _, thresholded = cv2.threshold(blurred, 50, 255, cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        largest_contour = max(contours, key=cv2.contourArea)
+        # Resize all images to the target size
+        resized_images = [cv2.resize(img, target_size, interpolation=cv2.INTER_AREA) for img in preprocessed_images]
 
-        # Contour and rectify the image
-        hull = cv2.convexHull(largest_contour, returnPoints=False)
-        defects = cv2.convexityDefects(largest_contour, hull)
-        
-        if defects is not None:
-            defects = sorted(defects, key=lambda x: x[0, 3], reverse=True)
-            far_points = [tuple(largest_contour[defects[i][0][2]][0]) for i in range(min(4, len(defects)))]
-            far_points = sorted(far_points, key=lambda point: point[1])
-            first_defect_far, third_defect_far = far_points[0], far_points[2]
+        # Stack images and add channel dimension
+        stacked_images = np.stack(resized_images, axis=0)  # Shape: (num_images, height, width)
+        cnn_input = np.expand_dims(stacked_images, axis=1)  # Add channel dimension: (num_images, 1, height, width)
 
-            length = int(np.sqrt((third_defect_far[0] - first_defect_far[0])**2 +
-                                 (third_defect_far[1] - first_defect_far[1])**2))
-            rectified_order = np.array([[0, 0], [length, 0], [length, length], [0, length]], dtype=np.float32)
-            transform_matrix = cv2.getPerspectiveTransform(
-                np.float32([first_defect_far, third_defect_far, (0, 0), (0, 0)]), rectified_order
-            )
-            rectified_image = cv2.warpPerspective(image, transform_matrix, (length, length))
-        else:
-            rectified_image = cropped_image
+        # Normalize pixel values to range [0, 1]
+        cnn_input = cnn_input.astype(np.float32) / 255.0
+        return cnn_input
 
-        rectified_image_equalized = cv2.equalizeHist(rectified_image)
+    def generate_batches(self, hand, spectrum):
+        """
+        Generate batches of preprocessed images for multiple patients.
+        Yields:
+            Tuple[np.ndarray, List[str]]: (CNN input batch, list of patient IDs).
+        """
+        patient_batches = []
+        patient_ids = []
 
-        # Apply Gabor filtering
-        g_kernel_size, g_sigma, g_theta, g_lambda, g_gamma, g_psi = 5, 2.5, np.pi/3, 8.0, 0.4, 0.0
-        gabor_kernel = cv2.getGaborKernel((g_kernel_size, g_kernel_size), g_sigma, g_theta, g_lambda, g_gamma, g_psi, ktype=cv2.CV_32F)
-        filtered_veins = cv2.filter2D(rectified_image_equalized, cv2.CV_32F, gabor_kernel)
-        filtered_veins = cv2.normalize(filtered_veins, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        for person_id in PATIENTS:
+            images = self._load_images(person_id, hand, spectrum)
+            if len(images) == 6:  # Ensure exactly 6 images per patient
+                cnn_input = self._prepare_cnn_input(images)
+                patient_batches.append(cnn_input)
+                patient_ids.append(person_id)
 
-        # CLAHE and thresholding
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(10, 10))
-        clahe_veins = clahe.apply(filtered_veins)
-        _, binary_veins = cv2.threshold(clahe_veins, 110, 255, cv2.THRESH_BINARY)
+                if len(patient_batches) == self.batch_size:
+                    yield np.stack(patient_batches, axis=0), patient_ids
+                    patient_batches = []
+                    patient_ids = []
 
-        return binary_veins
+        # Yield the last partial batch if it exists
+        if patient_batches:
+            yield np.stack(patient_batches, axis=0), patient_ids
 
-    def generate_batches(self, person_id, hand, spectrum):
-        images = self._load_images(person_id, hand, spectrum)
-        for i in range(0, len(images), self.batch_size):
-            batch = images[i:i+self.batch_size]
-            preprocessed_batch = [self._preprocess_image(img) for img in batch]
-            yield np.stack(preprocessed_batch, axis=0)
+def test_vein_image_dataloader():
+    vein_loader = VeinImageDataLoader(dataset_dir=DATASET_PATH, batch_size=1)
+    batch_generator = vein_loader.generate_batches(hand=HAND, spectrum=SPECTRUM)
+
+    output_dir = os.path.join(OUTPUT_DIR, "test_images")
+    os.makedirs(output_dir, exist_ok=True)
+
+    for cnn_input, patient_ids in batch_generator:
+        print(f"Patient ID: {patient_ids}")
+        print(f"Input shape for CNN: {cnn_input.shape}")  # Expected: (1, 6, 1, 128, 128)
+
+        # Process first batch for visualization
+        for patient_idx, patient_id in enumerate(patient_ids):
+            for img_idx in range(cnn_input.shape[1]):
+                img = cnn_input[patient_idx, img_idx, 0]  # Get individual image (remove batch and channel dims)
+                
+                # Save the image
+                save_path = os.path.join(output_dir, f"{patient_id}_img_{img_idx + 1}.png")
+                plt.imsave(save_path, img, cmap='gray')
+                print(f"Saved: {save_path}")
+        break  # Test only the first batch
+    
+if __name__ == "__main__":
+    test_vein_image_dataloader()
