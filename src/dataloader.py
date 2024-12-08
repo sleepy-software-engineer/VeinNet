@@ -48,9 +48,9 @@ if __name__ == "__main__":
     split_data = split(PATIENTS, DATASET_PATH)
     mapping_ids = mapping(PATIENTS)
     
-    train_loader = DataLoader(split_data, "train", map)
-    val_loader = DataLoader(split_data, "val", map)
-    test_loader = DataLoader(split_data, "test", map)
+    train_loader = DataLoader(split_data, "train", mapping_ids)
+    val_loader = DataLoader(split_data, "val", mapping_ids)
+    test_loader = DataLoader(split_data, "test", mapping_ids)
 
     test(train_loader, "train")
     test(val_loader, "val")
