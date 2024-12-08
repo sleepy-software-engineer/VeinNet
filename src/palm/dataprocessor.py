@@ -221,4 +221,6 @@ class VeinImageProcessor:
         # Step 7: Binarize the image
         binary_image = self.binarize_image(enhanced_image)
 
-        return binary_image
+        output = cv2.resize(binary_image, (128, 128), interpolation=cv2.INTER_AREA)
+        
+        return output
