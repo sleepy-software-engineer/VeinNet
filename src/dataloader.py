@@ -1,7 +1,6 @@
 import sys
 import os
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from typing import DefaultDict
 from dataprocessor import DataProcessor
 from utils.functions import split, mapping
@@ -23,7 +22,7 @@ class DataLoader:
 def test(dataloader, split_name):
     try:
         patient_image_counts = DefaultDict(int)
-        for vein_image, patient_id in dataloader.generate_data():
+        for _, patient_id in dataloader.generate_data():
             patient_image_counts[patient_id] += 1
 
         for patient_id, count in patient_image_counts.items():
