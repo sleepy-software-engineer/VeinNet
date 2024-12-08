@@ -93,7 +93,7 @@ class ContourProcessor:
         vertices = np.array(vertices, dtype=np.float32)
         return cv2.getPerspectiveTransform(vertices, rectified_order)
 
-class VeinImageProcessor:
+class DataProcessor:
     @staticmethod
     def load_and_crop_image(image_path):
         """
@@ -221,6 +221,7 @@ class VeinImageProcessor:
         # Step 7: Binarize the image
         binary_image = self.binarize_image(enhanced_image)
 
+        # Step 8: Resize final image to 128x128  
         output = cv2.resize(binary_image, (128, 128), interpolation=cv2.INTER_AREA)
         
         return output
