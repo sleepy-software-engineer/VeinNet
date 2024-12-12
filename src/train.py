@@ -1,4 +1,7 @@
 import torch
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_fscore_support, matthews_corrcoef
+import pandas as pd
 from torch_optimizer import RAdam, Lookahead
 from torch import nn 
 from utils.config import PATIENTS, DATASET_PATH, HAND, SPECTRUM, SEED
@@ -13,15 +16,14 @@ def train(model: nn.Module, train_loader: DataLoader, val_loader: DataLoader, de
     criterion = nn.CrossEntropyLoss() 
 
     os.makedirs(checkpoint_dir, exist_ok=True)
-
-    best_val_accuracy = 0.0  
     best_model_path = os.path.join(checkpoint_dir, "model.pth")
-    epochs_no_improve = 0 
-    epoch = 0
+    
+    best_val_accuracy, epochs_no_improve, epoch = 0.0, 0, 0  
+    train_losses, val_losses, train_accuracies, val_accuracies, metrics_data = [], [], [], [], []
 
     while epochs_no_improve < patience:
         model.train()
-        train_loss = 0.0
+        train_loss, correct_train, total_train = 0.0, 0, 0
         for vein_image, label in train_loader.generate_data():
             vein_image = torch.tensor(vein_image, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
             label = torch.tensor([int(label)], dtype=torch.long).to(device)
@@ -33,10 +35,17 @@ def train(model: nn.Module, train_loader: DataLoader, val_loader: DataLoader, de
             optimizer.step()
             train_loss += loss.item()
 
+            pred = torch.argmax(output, dim=1)
+            correct_train += (pred == label).sum().item()
+            total_train += label.size(0)
+
+        train_loss /= len(train_loader.image_paths)
+        train_accuracy = correct_train / total_train
+
         model.eval()
-        val_loss = 0.0
-        correct = 0
-        total = 0
+        val_loss, correct_val, total_val = 0.0, 0, 0
+        all_preds, all_labels = [], []
+        
         with torch.no_grad():
             for vein_image, label in val_loader.generate_data():
                 vein_image = torch.tensor(vein_image, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
@@ -45,29 +54,59 @@ def train(model: nn.Module, train_loader: DataLoader, val_loader: DataLoader, de
                 output = model(vein_image)
                 val_loss += criterion(output, label).item()
                 pred = torch.argmax(output, dim=1)
-                correct += (pred == label).sum().item()
-                total += label.size(0)
+                all_preds.extend(pred.cpu().numpy())
+                all_labels.extend(label.cpu().numpy())
+                correct_val += (pred == label).sum().item()
+                total_val += label.size(0)
 
-        train_loss /= len(train_loader.image_paths)
         val_loss /= len(val_loader.image_paths)
-        val_accuracy = correct / total
+        val_accuracy = correct_val / total_val
 
-        print(f"Epoch {epoch + 1}, Train Loss: {train_loss:.4f}, "
-              f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}")
+        precision, recall, f1_score, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted', zero_division=0)
+        mcc = matthews_corrcoef(all_labels, all_preds)
+
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        train_accuracies.append(train_accuracy)
+        val_accuracies.append(val_accuracy)
+
+        metrics_data.append({'Epoch': epoch + 1,'Train Loss': train_loss,'Val Loss': val_loss,'Train Accuracy': train_accuracy,
+                             'Val Accuracy': val_accuracy,'Precision': precision,'Recall': recall,'F1 Score': f1_score,'Matthews Corr. Coeff.': mcc})
+
+        print(f"Epoch {epoch + 1}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, "
+              f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}, F1 Score: {f1_score:.4f}, MCC: {mcc:.4f}")
 
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save({
-                'epoch': epoch + 1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.optimizer.state_dict(),
-                'val_accuracy': val_accuracy
-            }, best_model_path)
+            torch.save(model.state_dict(), best_model_path) 
             print(f"New best model saved with Val Accuracy: {val_accuracy:.4f}")
-            epochs_no_improve = 0 
+            epochs_no_improve = 0
         else:
             epochs_no_improve += 1
+        print(f"Epoch {epoch + 1}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, "
+              f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}, F1 Score: {f1_score:.4f}, MCC: {mcc:.4f}")
         epoch += 1
+
+    metrics_df = pd.DataFrame(metrics_data)
+    metrics_df.to_csv(os.path.join(checkpoint_dir, "metrics.csv"), index=False)
+
+    plt.figure()
+    plt.plot(range(1, len(train_losses) + 1), train_losses, label='Train Loss')
+    plt.plot(range(1, len(val_losses) + 1), val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig(os.path.join(checkpoint_dir, "loss_curve.png"))
+    plt.close()
+
+    plt.figure()
+    plt.plot(range(1, len(train_accuracies) + 1), train_accuracies, label='Train Accuracy')
+    plt.plot(range(1, len(val_accuracies) + 1), val_accuracies, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.savefig(os.path.join(checkpoint_dir, "accuracy_curve.png"))
+    plt.close()
 
 if __name__ == "__main__":
     mapping_ids = mapping(PATIENTS)
