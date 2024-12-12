@@ -4,9 +4,6 @@ from dataprocessor import DataProcessor
 class DataLoader:
     """
     DataLoader class for loading and processing biometric data.
-    Attributes:
-        image_paths (list): List of image file paths for the given data split.
-        id_mapping (dict): Dictionary mapping patient IDs to their corresponding labels.
     """
     def __init__(self, split_data, split_name, id_mapping):
         self.image_paths = split_data[split_name]
