@@ -18,7 +18,7 @@ class DataLoader:
         """
         for image_path in self.image_paths:
             vein_image, label, _ = self.generate_image(image_path)
-            return vein_image, label
+            yield vein_image, label
 
     def generate_image(self, image_path):
         """
