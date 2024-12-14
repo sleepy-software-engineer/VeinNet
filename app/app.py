@@ -137,7 +137,7 @@ def classify_all(model: Model, loader: DataLoader, device: torch.device) -> None
 
 
 def main() -> None:
-    st.title("VeinVision - CNN Recognition System")
+    st.title("VeinNet- CNN Recognition System")
     model, device, loader = init_model()
     st.sidebar.title("Menu")
     option = st.sidebar.selectbox(
