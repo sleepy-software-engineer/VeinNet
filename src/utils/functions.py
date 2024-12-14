@@ -4,7 +4,7 @@ import random
 from typing import DefaultDict
 
 
-def mapping(patients: list) -> DefaultDict:
+def mapping(patients: list) -> DefaultDict[str, int]:
     """
     Creates a mapping of patient IDs to their corresponding indices.
     """
@@ -13,7 +13,7 @@ def mapping(patients: list) -> DefaultDict:
 
 def split(
     patients: list, dataset_dir: str, hand: str, spectrum: str, seed: int
-) -> DefaultDict:
+) -> DefaultDict[str, list]:
     """
     Splits the dataset of patient images into training, validation, and test sets.
     """

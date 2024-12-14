@@ -1,4 +1,5 @@
 import os
+from typing import DefaultDict
 
 from dataprocessor import DataProcessor
 
@@ -8,7 +9,12 @@ class DataLoader:
     DataLoader class for loading and processing biometric data.
     """
 
-    def __init__(self, split_data, split_name, id_mapping):
+    def __init__(
+        self,
+        split_data: DefaultDict[str, list],
+        split_name: str,
+        id_mapping: DefaultDict[str, int],
+    ) -> None:
         self.image_paths = split_data[split_name]
         self.id_mapping = id_mapping
 
@@ -20,7 +26,7 @@ class DataLoader:
             vein_image, label, _ = self.generate_image(image_path)
             yield vein_image, label
 
-    def generate_image(self, image_path):
+    def generate_image(self, image_path: str):
         """
         Generates a preprocessed vein image along with its label and patient ID.
         """
