@@ -24,8 +24,7 @@ class DataLoader:
         """
         Generates a preprocessed vein image along with its label and patient ID.
         """
-        processor = DataProcessor()
         patient_id = os.path.basename(image_path).split("_")[0]
         label = self.id_mapping[patient_id]
-        vein_image = processor.preprocess_image(image_path)
+        vein_image = DataProcessor.preprocess_image(image_path)
         return vein_image, label, patient_id
