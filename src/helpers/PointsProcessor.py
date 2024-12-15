@@ -26,7 +26,7 @@ class PointsProcessor:
             dx /= length
             dy /= length
         # Return the midpoint, direction vector, and length
-        return midpoint, dx, dy, length
+        return midpoint, dx, dy
 
     @staticmethod
     def compute_perpendicular_point(midpoint, dx, dy, distance=50):
@@ -52,14 +52,6 @@ class PointsProcessor:
                 + (third_defect_far[1] - first_defect_far[1]) ** 2
             )
         )
-
-    @staticmethod
-    def calculate_midpoint(midpoint):
-        """
-        Calculate the integer coordinates of a midpoint.
-        """
-        # Return the integer coordinates of the midpoint
-        return (int(midpoint[0]), int(midpoint[1]))
 
     @staticmethod
     def process_perpendicular_point(midpoint, perpendicular_point):

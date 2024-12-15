@@ -15,8 +15,8 @@ from utils.functions import mapping, split
 
 def train(
     model: nn.Module,
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    train_loader,
+    val_loader,
     device: torch.device,
     lr: int,
     patience: int,
@@ -27,20 +27,23 @@ def train(
     criterion = nn.CrossEntropyLoss()
 
     os.makedirs(checkpoint_dir, exist_ok=True)
-    best_model_path = os.path.join(checkpoint_dir, "model.pth")
+    best_model_path = os.path.join(checkpoint_dir, "best_model.pth")
 
-    best_val_accuracy, epochs_no_improve, epoch = 0.0, 0, 0
-    train_losses, val_losses, train_accuracies, val_accuracies, metrics_data = (
-        [],
-        [],
-        [],
-        [],
-        [],
-    )
+    best_val_accuracy = 0.0
+    epochs_no_improve = 0
+    epoch = 0
+
+    train_losses, val_losses = [], []
+    train_accuracies, val_accuracies = [], []
+    metrics_data = []
+    best_metrics = None
 
     while epochs_no_improve < patience:
+        # Training phase
         model.train()
-        train_loss, correct_train, total_train = 0.0, 0, 0
+        train_loss = 0.0
+        correct_train, total_train = 0, 0
+
         for vein_image, label in train_loader.generate_data():
             vein_image = (
                 torch.tensor(vein_image, dtype=torch.float32)
@@ -55,8 +58,8 @@ def train(
             loss = criterion(output, label)
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
 
+            train_loss += loss.item()
             pred = torch.argmax(output, dim=1)
             correct_train += (pred == label).sum().item()
             total_train += label.size(0)
@@ -64,8 +67,10 @@ def train(
         train_loss /= len(train_loader.image_paths)
         train_accuracy = correct_train / total_train
 
+        # Validation phase
         model.eval()
-        val_loss, correct_val, total_val = 0.0, 0, 0
+        val_loss = 0.0
+        correct_val, total_val = 0, 0
         all_preds, all_labels = [], []
 
         with torch.no_grad():
@@ -89,16 +94,17 @@ def train(
         val_loss /= len(val_loader.image_paths)
         val_accuracy = correct_val / total_val
 
+        # Compute additional metrics
         precision, recall, f1_score, _ = precision_recall_fscore_support(
             all_labels, all_preds, average="weighted", zero_division=0
         )
         mcc = matthews_corrcoef(all_labels, all_preds)
 
+        # Store metrics
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_accuracies.append(train_accuracy)
         val_accuracies.append(val_accuracy)
-
         metrics_data.append(
             {
                 "Epoch": epoch + 1,
@@ -112,27 +118,39 @@ def train(
                 "Matthews Corr. Coeff.": mcc,
             }
         )
-
-        print(
-            f"Epoch {epoch + 1}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, "
-            f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}, F1 Score: {f1_score:.4f}, MCC: {mcc:.4f}"
-        )
-
+        # Store metrics for the best model
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(), best_model_path)
+            best_metrics = {
+                "Epoch": epoch + 1,
+                "Train Loss": train_loss,
+                "Val Loss": val_loss,
+                "Train Accuracy": train_accuracy,
+                "Val Accuracy": val_accuracy,
+                "Precision": precision,
+                "Recall": recall,
+                "F1 Score": f1_score,
+                "Matthews Corr. Coeff.": mcc,
+            }
+            torch.save(
+                model.state_dict(), best_model_path
+            )  # Save only the model's state_dict
             print(f"New best model saved with Val Accuracy: {val_accuracy:.4f}")
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
+
         print(
             f"Epoch {epoch + 1}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, "
             f"Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}, F1 Score: {f1_score:.4f}, MCC: {mcc:.4f}"
         )
         epoch += 1
 
-    metrics_df = pd.DataFrame(metrics_data)
-    metrics_df.to_csv(os.path.join(checkpoint_dir, "metrics.csv"), index=False)
+    if best_metrics:
+        best_metrics_df = pd.DataFrame([best_metrics])
+        best_metrics_df.to_csv(
+            os.path.join(checkpoint_dir, "best_metrics.csv"), index=False
+        )
 
     plt.figure()
     plt.plot(range(1, len(train_losses) + 1), train_losses, label="Train Loss")

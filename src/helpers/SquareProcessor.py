@@ -92,7 +92,7 @@ class SquareProcessor:
         first_defect_far, third_defect_far = far_points[0], far_points[2]
 
         # Compute the midpoint, direction, and length between the first and third far points
-        midpoint, dx, dy, length = PointsProcessor.compute_midpoint_and_direction(
+        midpoint, dx, dy = PointsProcessor.compute_midpoint_and_direction(
             first_defect_far, third_defect_far
         )
 
@@ -108,9 +108,6 @@ class SquareProcessor:
         square_vertices = SquareProcessor.generate_square_vertices(
             perpendicular_point, length
         )
-
-        # Calculate the midpoint of the square
-        midpoint = PointsProcessor.calculate_midpoint(midpoint)
 
         # Calculate the angle of rotation based on the direction
         angle = np.arctan2(-dy, dx) * 180 / np.pi
