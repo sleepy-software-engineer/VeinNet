@@ -1,6 +1,6 @@
 Metric,Value
-Accuracy,0.84
-Precision,0.7883333333333334
-Recall,0.84
-F1 Score,0.805
-Matthews Corr. Coeff.,0.8394019126367416
+Accuracy,0.81
+Precision,0.7466666666666666
+Recall,0.81
+F1 Score,0.7666666666666666
+Matthews Corr. Coeff.,0.8094720060055415
