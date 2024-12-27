@@ -1,8 +1,21 @@
 \documentclass[a4paper]{article}
 \usepackage{graphicx}
 \usepackage{library}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{xcolor} 
+\usepackage{hyperref}
+\usepackage{float}
 
-\title{VeinNet: CNN Hand Vein Recognition System}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=magenta,
+    filecolor=magenta,
+    urlcolor=cyan
+}
+
+\title{VeinNet: CNN Palm Vein Recognition System}
 
 \author{
 Lucian Dorin Crainic\\ 
@@ -17,15 +30,15 @@ crainic.1938430@studenti.uniroma1.it
 
 \input{src/abstract.tex}
 \input{src/introduction.tex}
-\input{src/literature.tex}
+\input{src/dataset.tex}
 \input{src/methodology.tex}
-\input{src/experimental.tex}
-\input{src/results.tex}
-\input{src/discussion.tex}
-\input{src/conclusion.tex}
+% \input{src/experimental.tex}
+% \input{src/results.tex}
+% \input{src/discussion.tex}
+% \input{src/conclusion.tex}
 
-\bibliographystyle{alpha} 
-\bibliography{samplebib.bib}
+\bibliographystyle{apalike} 
+\bibliography{bibliography.bib}
 
 
 \end{document}
