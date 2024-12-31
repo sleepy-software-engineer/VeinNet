@@ -1,116 +1,44 @@
-%----------------------------------------------------------------------------------------
-%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
-%----------------------------------------------------------------------------------------
+\documentclass[a4paper]{article}
+\usepackage{graphicx}
+\usepackage{library}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{xcolor} 
+\usepackage{hyperref}
+\usepackage{float}
 
-\documentclass[twoside]{article}
-
-\usepackage{lipsum} % Package to generate dummy text throughout this template
-
-\usepackage[sc]{mathpazo} % Use the Palatino font
-\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
-\linespread{1.05} % Line spacing - Palatino needs more space between lines
-\usepackage{microtype} % Slightly tweak font spacing for aesthetics
-
-\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry} % Document margins
-\usepackage{multicol} % Used for the two-column layout of the document
-\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
-\usepackage{booktabs} % Horizontal rules in tables
-\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
-\usepackage{hyperref} % For hyperlinks in the PDF
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
-    filecolor=magenta,      
-    urlcolor=cyan,
-    pdftitle={Overleaf Example},
-    pdfpagemode=FullScreen,
-    }
+    citecolor=magenta,
+    filecolor=magenta,
+    urlcolor=cyan
+}
 
-\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
-\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
-
-\usepackage{abstract} % Allows abstract customization
-\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
-\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
-
-\usepackage{titlesec} % Allows customization of titles
-\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
-\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
-\titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
-\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the section titles
-
-\usepackage{fancyhdr} % Headers and footers
-\pagestyle{fancy} % All pages have headers and footers
-\fancyhead{} % Blank out the default header
-\fancyfoot{} % Blank out the default footer
-\fancyhead[C]{Biometric Systems $\bullet$ January 2025 $\bullet$ Prof. Maria De Marsico} % Custom header text
-\fancyfoot[RO,LE]{\thepage} % Custom footer text
-
-%----------------------------------------------------------------------------------------
-%	TITLE SECTION
-%----------------------------------------------------------------------------------------
-
-\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{HandFusionNet: Multi-Feature Biometric Recognition Using Neural Networks}} % Article title
+\title{VeinNet: CNN Palm Vein Identification System}
 
 \author{
-\large
-\textsc{Lucian Dorin Crainic}\\[2mm] % Your name
-\normalsize La Sapienza University of Rome \\ % Your institution
-\normalsize \href{mailto:john@smith.com}{crainic.193840@studenti.uniroma1.it} % Your email address
-\vspace{-5mm}
+Lucian Dorin Crainic\\ 
+Department of Computer Science \\
+crainic.1938430@studenti.uniroma1.it
 }
-\date{}
 
-%----------------------------------------------------------------------------------------
+\institution{La Sapienza University of Rome}
 
 \begin{document}
+\maketitle
 
-\maketitle % Insert title
+\input{src/abstract.tex}
+\input{src/introduction.tex}
+\input{src/dataset.tex}
+\input{src/methodology.tex}
+% \input{src/experimental.tex}
+% \input{src/results.tex}
+% \input{src/discussion.tex}
+% \input{src/conclusion.tex}
 
-\thispagestyle{fancy} % All pages have headers and footers
+\bibliographystyle{apalike} 
+\bibliography{bibliography.bib}
 
-%----------------------------------------------------------------------------------------
-%	ABSTRACT
-%----------------------------------------------------------------------------------------
-
-\begin{abstract}
-
-\noindent \lipsum[1] % Dummy abstract text
-
-\end{abstract}
-
-%----------------------------------------------------------------------------------------
-%	ARTICLE CONTENTS
-%----------------------------------------------------------------------------------------
-
-\begin{multicols}{2} % Two-column layout throughout the main article text
-
-\section{Introduction}
-
-
-%------------------------------------------------
-
-\section{Methods}
-
-
-%------------------------------------------------
-
-\section{Results}
-
-
-%------------------------------------------------
-
-\section{Discussion}
-
-
-%----------------------------------------------------------------------------------------
-%	REFERENCE LIST
-%----------------------------------------------------------------------------------------
-
-%todo bibliography
-
-%----------------------------------------------------------------------------------------
-
-\end{multicols}
 
 \end{document}
