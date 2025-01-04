@@ -11,7 +11,7 @@ from torch import nn
 from torch_optimizer import Lookahead, RAdam
 
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
-from utils.functions import mapping, split
+from utils.functions import mapping, split_closed
 
 
 def plot_test_metrics(cmc, ranks, test_directory):
@@ -255,7 +255,7 @@ def test(
 
 if __name__ == "__main__":
     mapping_ids = mapping(PATIENTS)
-    split_data = split(PATIENTS, DATASET_PATH, HAND, SPECTRUM, SEED)
+    split_data = split_closed(PATIENTS, DATASET_PATH, HAND, SPECTRUM, SEED)
 
     train_loader = DataLoader(split_data, "train", mapping_ids)
     val_loader = DataLoader(split_data, "val", mapping_ids)
@@ -275,10 +275,10 @@ if __name__ == "__main__":
         "./src/identification/closed/model/train",
     )
 
-    # test(
-    #     model,
-    #     test_loader,
-    #     device,
-    #     "./src/identification/closed/model/train/model.pth",
-    #     "./src/identification/closed/model/test",
-    # )
+    test(
+        model,
+        test_loader,
+        device,
+        "./src/identification/closed/model/train/model.pth",
+        "./src/identification/closed/model/test",
+    )
