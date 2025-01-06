@@ -82,5 +82,5 @@ class RoiProcessor:
         """
         Resize the input image to 128x128 pixels using INTER_AREA interpolation.
         """
-        # Resize the image to 128x128 pixels using INTER_AREA interpolation
+        # Resize the input image to 128x128 pixels using INTER_AREA interpolation
         return cv2.resize(image, (128, 128), interpolation=cv2.INTER_AREA)

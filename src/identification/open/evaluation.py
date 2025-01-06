@@ -5,117 +5,107 @@ import torch
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
-import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import numpy as np
 from dataloader import DataLoader
 from model import Model
+from torch import device
+from torch.nn import CrossEntropyLoss
 from torch_optimizer import Lookahead, RAdam
 
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
 from utils.functions import mapping, split_open
 
 
-def train(
-    model: torch.nn.Module,
-    train_dataloader: DataLoader,
-    val_dataloader: DataLoader,
-    num_classes: int,
-    epochs: int,
-    lr: float,
-    device: torch.device,
-):
-    model.to(device)
-    radam_optimizer = RAdam(model.parameters(), lr=lr, weight_decay=1e-3)
-    optimizer = Lookahead(radam_optimizer, k=5, alpha=0.5)
+def test(model, test_loader, device):
+    model.eval()
+    probabilities = []
+    labels = []
 
-    for epoch in range(epochs):
-        print(f"Epoch {epoch + 1}/{epochs}")
+    with torch.no_grad():
+        for images, batch_labels in test_loader.generate_data():
+            images = images.to(device)
+            outputs = model(images)
+            probs = torch.softmax(outputs, dim=1)
+            max_probs, _ = torch.max(probs, dim=1)
+
+            probabilities.extend(max_probs.cpu().numpy())
+            labels.extend(batch_labels.cpu().numpy())
+
+    probabilities = np.array(probabilities)
+    labels = np.array(labels)
+
+    thresholds = np.linspace(0, 1, 1000)
+
+    far_list = []
+    frr_list = []
+
+    for threshold in thresholds:
+        far = np.mean(
+            (probabilities >= threshold) & (labels == -1)
+        )  # Unknown classified as known
+        frr = np.mean(
+            (probabilities < threshold) & (labels != -1)
+        )  # Known classified as unknown
+
+        far_list.append(far)
+        frr_list.append(frr)
+
+    far_list = np.array(far_list)
+    frr_list = np.array(frr_list)
+
+    eer_index = np.argmin(np.abs(far_list - frr_list))
+    eer = (far_list[eer_index] + frr_list[eer_index]) / 2
+    best_threshold = thresholds[eer_index]
+
+    # Plot FAR vs. FRR
+    plt.figure(figsize=(8, 6))
+    plt.plot(thresholds, far_list, label="FAR (False Acceptance Rate)")
+    plt.plot(thresholds, frr_list, label="FRR (False Rejection Rate)")
+    plt.axvline(
+        x=best_threshold,
+        color="r",
+        linestyle="--",
+        label=f"EER Threshold = {best_threshold:.4f}",
+    )
+    plt.xlabel("Threshold")
+    plt.ylabel("Rate")
+    plt.title("FAR vs. FRR")
+    plt.legend()
+    plt.grid()
+    plt.savefig("eer.png")
+
+    print(f"EER: {eer:.4f}, Best Threshold: {best_threshold:.4f}")
+
+
+def train(
+    model,
+    train_loader: DataLoader,
+    num_epochs,
+    device,
+):
+    radam_optimizer = RAdam(model.parameters(), lr=0.001, weight_decay=5e-4)
+    optimizer = Lookahead(radam_optimizer, k=10, alpha=0.5)
+    criterion = CrossEntropyLoss()
+
+    for epoch in range(num_epochs):
         model.train()
         train_loss = 0.0
-
-        class_centroids = torch.zeros(
-            num_classes, model.embedding_layer.out_features
-        ).to(device)
-        class_counts = torch.zeros(num_classes).to(device)
-
-        for images, labels in train_dataloader.generate_data():
+        for images, labels in train_loader.generate_data():
             images, labels = images.to(device), labels.to(device)
-            embeddings = model(images)
 
-            for c in range(num_classes):
-                mask = labels == c
-                if mask.sum() > 0:
-                    class_centroids[c] += embeddings[mask].detach().sum(dim=0)
-                    class_counts[c] += mask.sum()
-
-            class_centroids /= class_counts[:, None] + 1e-8
-
-            centroid_distances = F.pairwise_distance(
-                embeddings[:, None], class_centroids, p=2
-            )
-
-            margin = 0.1
-            loss = torch.mean(
-                torch.clamp(torch.min(centroid_distances, dim=1)[0] - margin, min=0)
-            )
-            train_loss += loss.item()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-        train_loss /= len(train_dataloader.image_paths_known)
+            train_loss += loss.item()
 
-        model.eval()
-        val_loss = 0.0
-        known_distances = []
-        unknown_distances = []
-
-        with torch.no_grad():
-            for images, labels in val_dataloader.generate_data():
-                images, labels = images.to(device), labels.to(device)
-                embeddings = model(images)
-
-                centroid_distances = F.pairwise_distance(
-                    embeddings[:, None], class_centroids, p=2
-                )
-
-                known_mask = labels != -1
-                unknown_mask = labels == -1
-
-                if known_mask.sum() > 0:
-                    known_embeddings = embeddings[known_mask]
-                    known_centroid_distances = F.pairwise_distance(
-                        known_embeddings[:, None], class_centroids, p=2
-                    )
-                    loss_known = torch.mean(
-                        torch.min(centroid_distances[labels != -1], dim=1)[0]
-                    )
-                    val_loss += loss_known.item()
-                    known_distances.extend(
-                        torch.min(known_centroid_distances, dim=1)[0].cpu().numpy()
-                    )
-
-                if unknown_mask.sum() > 0:
-                    unknown_embeddings = embeddings[unknown_mask]
-                    unknown_centroid_distances = F.pairwise_distance(
-                        unknown_embeddings[:, None], class_centroids, p=2
-                    )
-                    loss_unknown = torch.mean(
-                        torch.clamp(
-                            margin
-                            - torch.min(centroid_distances[labels == -1], dim=1)[0],
-                            min=0,
-                        )
-                    )
-                    val_loss += loss_unknown.item()
-                    unknown_distances.extend(
-                        torch.mean(unknown_centroid_distances, dim=1).cpu().numpy()
-                    )
-
-        val_loss /= len(val_dataloader.image_paths_known) + len(
-            val_dataloader.image_paths_unknown
-        )
-        print(f"Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f}")
+        train_loss /= len(train_loader.image_paths_known)
+        print(f"Epoch {epoch + 1}, Training Loss: {train_loss:.4f}")
+    return model
 
 
 if __name__ == "__main__":
@@ -126,20 +116,18 @@ if __name__ == "__main__":
     train_loader = DataLoader(
         split_data_known, split_data_unknown, "train", mapping_ids
     )
-    val_loader = DataLoader(split_data_known, split_data_unknown, "val", mapping_ids)
     test_loader = DataLoader(split_data_known, split_data_unknown, "test", mapping_ids)
 
-    num_classes = 70
+    num_classes = 100
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = Model().to(device)
+    model = Model(num_classes).to(device)
 
-    history = train(
+    model = train(
         model,
         train_loader,
-        val_loader,
-        num_classes,
-        50,
-        0.001,
-        device,
+        num_epochs=25,
+        device=device,
     )
+
+    test(model, test_loader, device)

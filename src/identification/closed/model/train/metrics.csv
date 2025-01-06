@@ -1,2 +1,2 @@
-Epoch,Train Loss,Val Loss,Train Recognition Rate,Val Recognition Rate,CMC
-77,0.06238232572395797,1.0395558271663166,0.97,0.86,[0.86 0.94 0.97 0.97 0.99 0.99 0.99 0.99 1.   1.   1.  ]
+Epoch,Train Loss,Val Loss,Train Recognition Rate,Val Recognition Rate
+70,0.042944083623207965,1.0577738649046002,0.9866666666666667,0.83
