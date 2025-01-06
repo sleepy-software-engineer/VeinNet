@@ -10,12 +10,13 @@ class Model(nn.Module):
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
         self.conv4 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(32 * 32 * 32, 128)
-        self.dropout = nn.Dropout(0.5)
-        self.fc2 = nn.Linear(128, num_classes)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.relu(self.conv1(x))
+        self.fc_image = nn.Linear(32 * 32 * 32, 128)
+        self.label_embedding = nn.Embedding(num_classes, 128)
+        self.fc_final = nn.Linear(128 + 128, 1)
+
+    def forward(self, image: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+        x = F.relu(self.conv1(image))
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2)
@@ -23,7 +24,10 @@ class Model(nn.Module):
         x = F.max_pool2d(x, 2)
         x = F.relu(self.conv4(x))
         x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
-        return x
+
+        image_features = F.relu(self.fc_image(x))
+        label_features = self.label_embedding(label)
+        combined_features = torch.cat((image_features, label_features), dim=1)
+        logits = self.fc_final(combined_features)
+
+        return torch.sigmoid(logits).view(-1)
