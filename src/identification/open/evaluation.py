@@ -5,6 +5,10 @@ import torch
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
+import csv
+import os
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 from dataloader import DataLoader
@@ -15,6 +19,11 @@ from torch_optimizer import Lookahead, RAdam
 
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
 from utils.functions import mapping, split_open
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+
+from scipy.interpolate import interp1d
+from sklearn.metrics import ConfusionMatrixDisplay, auc, confusion_matrix, roc_curve
 
 
 def test(model, test_loader, device):
@@ -39,20 +48,20 @@ def test(model, test_loader, device):
 
     far_list = []
     frr_list = []
+    dir_list = []
 
     for threshold in thresholds:
-        far = np.mean(
-            (probabilities >= threshold) & (labels == -1)
-        )  # Unknown classified as known
-        frr = np.mean(
-            (probabilities < threshold) & (labels != -1)
-        )  # Known classified as unknown
+        far = np.mean((probabilities >= threshold) & (labels == -1))  # False acceptance
+        frr = np.mean((probabilities < threshold) & (labels != -1))  # False rejection
+        dir_rate = 1 - frr  # Detection Identification Rate (DIR)
 
         far_list.append(far)
         frr_list.append(frr)
+        dir_list.append(dir_rate)
 
     far_list = np.array(far_list)
     frr_list = np.array(frr_list)
+    dir_list = np.array(dir_list)
 
     eer_index = np.argmin(np.abs(far_list - frr_list))
     eer = (far_list[eer_index] + frr_list[eer_index]) / 2
@@ -73,9 +82,69 @@ def test(model, test_loader, device):
     plt.title("FAR vs. FRR")
     plt.legend()
     plt.grid()
-    plt.savefig("eer.png")
+    plt.savefig("far_frr_plot.png")
 
-    print(f"EER: {eer:.4f}, Best Threshold: {best_threshold:.4f}")
+    # Plot ROC Curve for Best Threshold
+    fpr, tpr, roc_thresholds = roc_curve(
+        (labels != -1).astype(int), probabilities, pos_label=1
+    )
+    roc_auc = auc(fpr, tpr)
+
+    # Interpolate TPR for the best threshold
+    interp_tpr = interp1d(roc_thresholds, tpr, kind="linear", fill_value="extrapolate")
+    best_tpr = interp_tpr(best_threshold)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, color="b", label=f"ROC Curve (AUC = {roc_auc:.4f})")
+    plt.scatter(
+        fpr[np.abs(roc_thresholds - best_threshold).argmin()],
+        best_tpr,
+        color="red",
+        label="Best Threshold",
+    )
+    plt.xlabel("False Acceptance Rate (FAR)")
+    plt.ylabel("True Positive Rate (TPR)")
+    plt.title(f"ROC Curve for Best Threshold ({best_threshold:.4f})")
+    plt.legend()
+    plt.grid()
+    plt.savefig("roc_curve_best_threshold.png")
+
+    # Plot DET Curve for Best Threshold (Log Scale)
+    plt.figure(figsize=(8, 6))
+    plt.plot(far_list, frr_list, label="DET Curve")
+    plt.scatter(
+        far_list[eer_index], frr_list[eer_index], color="red", label="Best Threshold"
+    )
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("False Acceptance Rate (FAR)")
+    plt.ylabel("False Rejection Rate (FRR)")
+    plt.title(f"DET Curve for Best Threshold ({best_threshold:.4f})")
+    plt.grid(which="both")
+    plt.legend()
+    plt.savefig("det_curve_best_threshold.png")
+
+    # Save FAR, FRR, DIR to CSV
+    with open("threshold_metrics.csv", "w", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["Threshold", "FAR", "FRR", "DIR"])
+        for threshold, far, frr, dir_rate in zip(
+            thresholds, far_list, frr_list, dir_list
+        ):
+            csvwriter.writerow([threshold, far, frr, dir_rate])
+
+    # Compute Confusion Matrix for Best Threshold
+    predictions = (probabilities >= best_threshold).astype(int)
+    true_labels = (labels != -1).astype(int)  # Known are 1, Unknown are 0
+    cm = confusion_matrix(true_labels, predictions, labels=[1, 0])
+
+    # Plot Confusion Matrix
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm, display_labels=["Known", "Unknown"]
+    )
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title(f"Confusion Matrix (Threshold = {best_threshold:.4f})")
+    plt.savefig("confusion_matrix.png")
 
 
 def train(
