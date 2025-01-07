@@ -16,6 +16,8 @@ from torch_optimizer import Lookahead, RAdam
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
 from utils.functions import mapping, split_identification_closed
 
+OUTPUT_PATH = "./src/identification/closed"
+
 
 def plot_cmc_curve(
     all_scores: list, all_labels: list, directory: str, title="CMC Curve"
@@ -190,7 +192,6 @@ if __name__ == "__main__":
     split_data = split_identification_closed(
         mapping(PATIENTS), DATASET_PATH, HAND, SPECTRUM, SEED
     )
-
     train_loader = DataLoader(split_data, "train", mapping(PATIENTS))
     val_loader = DataLoader(split_data, "val", mapping(PATIENTS))
     test_loader = DataLoader(split_data, "test", mapping(PATIENTS))
@@ -205,12 +206,12 @@ if __name__ == "__main__":
     #     val_loader,
     #     0.001,
     #     50,
-    #     "./src/identification/closed/",
+    #     OUTPUT_PATH,
     # )
 
     test(
         model,
         test_loader,
         torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        "./src/identification/closed/",
+        OUTPUT_PATH,
     )
