@@ -1,20 +1,16 @@
-import os
-import sys
-
-import torch
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-
 import csv
 import os
 import sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
+
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from dataloader import DataLoader
+from matplotlib.colors import Normalize
 from model import Model
-from sklearn.metrics import ConfusionMatrixDisplay, auc, confusion_matrix, roc_curve
 from torch.nn import CrossEntropyLoss
 from torch_optimizer import Lookahead, RAdam
 
@@ -24,24 +20,42 @@ from utils.functions import mapping, split_identification_open
 OUTPUT_PATH = "./src/identification/open/"
 
 
-def plot_confusion_matrix(
-    probabilities, labels, far_list, frr_list, thresholds, directory
-):
+def plot_watchlist_roc_curve(far_list, dir_list, thresholds, directory):
     far_list = np.array(far_list)
-    frr_list = np.array(frr_list)
-    eer_index = np.argmin(np.abs(far_list - frr_list))
-    best_threshold = thresholds[eer_index]
-    predictions = (probabilities >= best_threshold).astype(int)
-    true_labels = (labels != -1).astype(int)
-    cm = confusion_matrix(true_labels, predictions, labels=[1, 0])
-    disp = ConfusionMatrixDisplay(
-        confusion_matrix=cm, display_labels=["Known", "Unknown"]
+    dir_list = np.array(dir_list)
+    thresholds = np.array(thresholds)
+
+    plt.figure(figsize=(8, 6))
+
+    Normalize(vmin=thresholds.min(), vmax=thresholds.max())
+
+    num_points = len(far_list)
+    subset_indices = np.linspace(0, num_points - 1, num=20, dtype=int)
+    far_subset = far_list[subset_indices]
+    dir_subset = dir_list[subset_indices]
+    thresholds_subset = thresholds[subset_indices]
+
+    plt.scatter(
+        far_subset,
+        dir_subset,
+        c=thresholds_subset,
+        cmap="viridis",
+        edgecolor="k",
+        label="Threshold Values",
     )
-    disp.plot(cmap=plt.cm.Blues)
-    plt.title("Confusion Matrix")
+
+    plt.plot(far_list, dir_list, color="b", label="Watchlist ROC Curve", linewidth=2)
+
+    cbar = plt.colorbar()
+    cbar.set_label("Threshold Values")
+
+    plt.xlabel("False Alarm Rate (FAR)")
+    plt.ylabel("Detection and Identification Rate (DIR)")
+    plt.title("Receiver Operating Characteristic (ROC) Curve")
+    plt.legend(loc="lower right")
+
     plt.tight_layout()
-    plt.savefig(directory + "out/confusion_matrix.png")
-    plt.close()
+    plt.savefig(directory + "out/watchlist_roc_curve.png")
 
 
 def save_threshold_metrics(thresholds, far_list, frr_list, dir_list, directory):
@@ -83,37 +97,6 @@ def plot_far_vs_frr(far_list, frr_list, thresholds, directory):
     plt.legend(loc="upper right")
     plt.tight_layout()
     plt.savefig(directory + "out/far_vs_frr.png")
-    plt.close()
-
-
-def plot_roc_curve(labels, probabilities, directory):
-    fpr, tpr, _ = roc_curve((labels != -1).astype(int), probabilities, pos_label=1)
-    roc_auc = auc(fpr, tpr)
-    plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, color="b", label=f"ROC Curve (AUC = {roc_auc:.4f})")
-    plt.fill_between(fpr, tpr, alpha=0.2, color="b", label="_no_legend_")
-    plt.xlabel("False Positive Rate (FAR)")
-    plt.ylabel("True Positive Rate (TPR)")
-    plt.title("ROC Curve")
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(directory + "out/roc_curve.png")
-    plt.close()
-
-
-def plot_det_curve(far_list, frr_list, directory):
-    plt.figure(figsize=(8, 6))
-    plt.plot(far_list, frr_list, label="DET Curve", color="b", linewidth=2)
-    plt.fill_between(far_list, frr_list, alpha=0.2, color="b", label="_nolegend_")
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("False Acceptance Rate (FAR)")
-    plt.ylabel("False Rejection Rate (FRR)")
-    plt.title("DET Curve")
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(directory + "out/det_curve.png")
-    plt.close()
 
 
 def test(model: Model, test_loader: DataLoader, device: torch.device, directory: str):
@@ -147,12 +130,8 @@ def test(model: Model, test_loader: DataLoader, device: torch.device, directory:
         dir_list.append(dir_rate)
 
     plot_far_vs_frr(far_list, frr_list, thresholds, directory)
-    plot_roc_curve(labels, probabilities, directory)
-    plot_det_curve(far_list, frr_list, directory)
     save_threshold_metrics(thresholds, far_list, frr_list, dir_list, directory)
-    plot_confusion_matrix(
-        probabilities, labels, far_list, frr_list, thresholds, directory
-    )
+    plot_watchlist_roc_curve(far_list, dir_list, thresholds, directory)
 
 
 def train(
