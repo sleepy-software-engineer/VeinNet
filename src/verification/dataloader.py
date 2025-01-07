@@ -1,7 +1,8 @@
 import os
 import sys
-from typing import DefaultDict
+from typing import DefaultDict, Generator, Tuple
 
+import cv2
 import torch
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
@@ -24,9 +25,11 @@ class DataLoader:
         self.imposters = [1, 40, 30, 20]
         self.imposter_index = 0
 
-    def generate_data(self):
+    def generate_data(
+        self,
+    ) -> Generator[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], None, None]:
         for image_path in self.image_paths:
-            vein_image, genuine_label = self.generate_image(image_path)
+            vein_image, genuine_label = self._generate_image(image_path)
             vein_tensor = (
                 torch.tensor(vein_image, dtype=torch.float32)
                 .unsqueeze(0)
@@ -51,7 +54,7 @@ class DataLoader:
             is_fake = torch.tensor([False], dtype=torch.bool).to(self.device)
             yield vein_tensor, fake_label_tensor, is_fake
 
-    def generate_image(self, image_path: str):
+    def _generate_image(self, image_path: str) -> Tuple[cv2.UMat, int]:
         patient_id = os.path.basename(image_path).split("_")[0]
         label = self.id_mapping[patient_id]
         vein_image = DataProcessor.preprocess_image(image_path)
