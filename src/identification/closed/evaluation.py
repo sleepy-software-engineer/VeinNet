@@ -1,20 +1,28 @@
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 from dataloader import DataLoader
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 from model import Model
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch import nn
 from torch_optimizer import Lookahead, RAdam
 
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
-from utils.functions import mapping, split_closed
+from utils.functions import mapping, split_identification_closed
 
 
-def plot_cmc_curve(all_scores, all_labels, title="CMC Curve"):
+def plot_cmc_curve(
+    all_scores: list, all_labels: list, directory: str, title="CMC Curve"
+) -> None:
+    import matplotlib.pyplot as plt
+    import numpy as np
+
     num_classes = all_scores.shape[1]
     num_samples = len(all_labels)
     sorted_indices = np.argsort(-all_scores, axis=1)
@@ -33,23 +41,25 @@ def plot_cmc_curve(all_scores, all_labels, title="CMC Curve"):
     plt.xlabel("Rank")
     plt.ylabel("Prob. of Identification")
     plt.title(title)
-    plt.grid()
 
     rank_1_rate = cmc[0]
     plt.annotate(
         f"Rank-1: {rank_1_rate:.2%}",
         xy=(1, rank_1_rate),
-        xytext=(5, rank_1_rate - 0.1),
+        xytext=(10, rank_1_rate - 0.05),
         arrowprops=dict(facecolor="black", arrowstyle="->"),
         fontsize=10,
         ha="center",
     )
 
     plt.tight_layout()
-    plt.savefig("cmc_curve.png")
+    plt.savefig(directory + "out/cmc_curve.png")
+    plt.close()
 
 
-def plot_confusion_matrix(true_labels, predicted_labels, title="Confusion Matrix"):
+def plot_confusion_matrix(
+    true_labels: list, predicted_labels: list, directory: str, title="Confusion Matrix"
+) -> None:
     conf_matrix = confusion_matrix(true_labels, predicted_labels)
     TN, FP, FN, TP = conf_matrix.ravel()
 
@@ -58,7 +68,7 @@ def plot_confusion_matrix(true_labels, predicted_labels, title="Confusion Matrix
     )
     disp.plot(cmap="Blues", values_format="d")
     plt.title(title)
-    plt.savefig("confusion_matrix.png")
+    plt.savefig(directory + "out/confusion_matrix.png")
 
 
 def train(
@@ -67,13 +77,13 @@ def train(
     val_loader: DataLoader,
     lr: int,
     patience: int,
-    train_directory: str,
+    directory: str,
 ) -> None:
     radam_optimizer = RAdam(model.parameters(), lr=lr, weight_decay=5e-4)
     optimizer = Lookahead(radam_optimizer, k=10, alpha=0.5)
     criterion = nn.CrossEntropyLoss()
 
-    checkpoint_path = os.path.realpath(os.path.join(train_directory, "model.pth"))
+    checkpoint_path = os.path.realpath(os.path.join(directory, "model/model.pth"))
     best_val_recognition_rate, epochs_no_improve, epoch = 0.0, 0, 0
 
     while epochs_no_improve < patience:
@@ -113,7 +123,6 @@ def train(
 
         if val_recognition_rate > best_val_recognition_rate:
             best_val_recognition_rate = val_recognition_rate
-
             metrics = {
                 "Epoch": epoch + 1,
                 "Train Loss": train_loss,
@@ -123,7 +132,7 @@ def train(
             }
             metrics_df = pd.DataFrame([metrics])
             metrics_df.to_csv(
-                os.path.realpath(os.path.join(train_directory, "metrics.csv")),
+                os.path.realpath(os.path.join(directory, "out/train_metrics.csv")),
                 index=False,
             )
             torch.save(model.state_dict(), checkpoint_path)
@@ -140,16 +149,15 @@ def test(
     model: nn.Module,
     test_loader: DataLoader,
     device: torch.device,
-    train_dir: str,
-    test_dir: str,
+    directory: str,
 ) -> None:
-    model.load_state_dict(torch.load(train_dir, map_location=device))
+    model.load_state_dict(
+        torch.load(directory + "model/model.pth", map_location=device)
+    )
     model.to(device)
     model.eval()
 
-    all_preds = []
-    all_labels = []
-    all_scores = []
+    all_preds, all_labels, all_scores = [], [], []
     test_loss = 0.0
     criterion = nn.CrossEntropyLoss()
 
@@ -173,27 +181,23 @@ def test(
     binary_labels = (all_labels == all_preds).astype(int)
     binary_preds = binary_labels
 
-    plot_confusion_matrix(
-        true_labels=binary_labels,
-        predicted_labels=binary_preds,
-        title="Confusion Matrix",
-    )
+    plot_confusion_matrix(binary_labels, binary_preds, directory)
 
-    plot_cmc_curve(all_scores, all_labels, title="CMC Curve")
+    plot_cmc_curve(all_scores, all_labels, directory)
 
 
 if __name__ == "__main__":
-    mapping_ids = mapping(PATIENTS)
-    split_data = split_closed(PATIENTS, DATASET_PATH, HAND, SPECTRUM, SEED)
+    split_data = split_identification_closed(
+        mapping(PATIENTS), DATASET_PATH, HAND, SPECTRUM, SEED
+    )
 
-    train_loader = DataLoader(split_data, "train", mapping_ids)
-    val_loader = DataLoader(split_data, "val", mapping_ids)
-    test_loader = DataLoader(split_data, "test", mapping_ids)
+    train_loader = DataLoader(split_data, "train", mapping(PATIENTS))
+    val_loader = DataLoader(split_data, "val", mapping(PATIENTS))
+    test_loader = DataLoader(split_data, "test", mapping(PATIENTS))
 
-    num_classes = len(mapping_ids)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    model = Model(num_classes).to(device)
+    model = Model(len(mapping(PATIENTS))).to(
+        torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    )
 
     # train(
     #     model,
@@ -201,13 +205,12 @@ if __name__ == "__main__":
     #     val_loader,
     #     0.001,
     #     50,
-    #     "./src/identification/closed/model/train",
+    #     "./src/identification/closed/",
     # )
 
     test(
         model,
         test_loader,
-        device,
-        "./src/identification/closed/model/train/model.pth",
-        "./src/identification/closed/model/test",
+        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        "./src/identification/closed/",
     )
