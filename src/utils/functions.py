@@ -8,13 +8,12 @@ def mapping(patients: list) -> DefaultDict[str, int]:
     return {patient_id: idx for idx, patient_id in enumerate(sorted(patients))}
 
 
-# TODO: rename to identification_close
-# TODO: split only between train and test and not val and then run the closed set identification
-def split_closed(
+def split_identification_closed(
     patients: list, dataset_dir: str, hand: str, spectrum: str, seed: int
 ) -> DefaultDict[str, list]:
     random.seed(seed)
     split_data = DefaultDict(list)
+
     for patient_id in patients:
         pattern = f"{patient_id}_{hand}_{spectrum}_*.jpg"
         image_paths = glob.glob(os.path.join(dataset_dir, pattern))
@@ -23,11 +22,11 @@ def split_closed(
         split_data["train"].extend(image_paths[:3])
         split_data["val"].extend(image_paths[3:4])
         split_data["test"].extend(image_paths[4:])
+
     return split_data
 
 
-# TODO: rename to identification_open
-def split_open(
+def split_identification_open(
     patients: List[str], dataset_dir: str, hand: str, spectrum: str, seed: int
 ) -> Tuple[DefaultDict[str, List[str]], DefaultDict[str, List[str]]]:
     random.seed(seed)
@@ -70,7 +69,3 @@ def split_verification_closed(
         split_data["test"].extend(image_paths[4:])
 
     return split_data
-
-
-if __name__ == "__main__":
-    pass
