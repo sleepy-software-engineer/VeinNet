@@ -23,7 +23,7 @@ class DataLoader:
 
     def generate_data(self) -> Generator[Tuple[torch.Tensor, torch.Tensor], None, None]:
         for image_path in self.image_paths:
-            vein_image, label = self._generate_image(image_path)
+            vein_image, label, _ = self._generate_image(image_path)
             vein_tensor = (
                 torch.tensor(vein_image, dtype=torch.float32)
                 .unsqueeze(0)
@@ -37,4 +37,4 @@ class DataLoader:
         patient_id = os.path.basename(image_path).split("_")[0]
         label = self.id_mapping[patient_id]
         vein_image = DataProcessor.preprocess_image(image_path)
-        return vein_image, label
+        return vein_image, label, patient_id
