@@ -16,15 +16,12 @@ from torch_optimizer import Lookahead, RAdam
 from utils.config import DATASET_PATH, HAND, PATIENTS, SEED, SPECTRUM
 from utils.functions import mapping, split_identification_closed
 
-OUTPUT_PATH = "./src/identification/closed"
+OUTPUT_PATH = "./src/identification/closed/"
 
 
 def plot_cmc_curve(
-    all_scores: list, all_labels: list, directory: str, title="CMC Curve"
+    all_scores: np.ndarray, all_labels: np.ndarray, directory: str, title="CMC Curve"
 ) -> None:
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     num_classes = all_scores.shape[1]
     num_samples = len(all_labels)
     sorted_indices = np.argsort(-all_scores, axis=1)
@@ -37,23 +34,36 @@ def plot_cmc_curve(
     cmc = rank_matches / num_samples
 
     plt.figure(figsize=(8, 6))
-    plt.plot(
-        range(1, num_classes + 1), cmc, linestyle="-", linewidth=3, label="CMC Curve"
+    (line,) = plt.plot(
+        range(1, num_classes + 1),
+        cmc,
+        linestyle="-",
+        linewidth=2,
+        color="b",
+        label="CMC Curve",
     )
-    plt.xlabel("Rank")
-    plt.ylabel("Prob. of Identification")
-    plt.title(title)
-
+    plt.fill_between(
+        range(1, num_classes + 1),
+        cmc,
+        alpha=0.2,
+        color="b",
+        label="_nolegend_",
+    )
     rank_1_rate = cmc[0]
     plt.annotate(
         f"Rank-1: {rank_1_rate:.2%}",
         xy=(1, rank_1_rate),
-        xytext=(10, rank_1_rate - 0.05),
+        xytext=(5, rank_1_rate - 0.05),
         arrowprops=dict(facecolor="black", arrowstyle="->"),
-        fontsize=10,
+        fontsize=12,
         ha="center",
     )
-
+    plt.xlim([0.5, num_classes])
+    plt.ylim([0.8, 1.02])
+    plt.xlabel("Rank", fontsize=12)
+    plt.ylabel("Probability of Identification", fontsize=12)
+    plt.title(title, fontsize=16)
+    plt.legend(handles=[line], loc="lower right", fontsize=10)
     plt.tight_layout()
     plt.savefig(directory + "out/cmc_curve.png")
     plt.close()
@@ -66,7 +76,7 @@ def plot_confusion_matrix(
     TN, FP, FN, TP = conf_matrix.ravel()
 
     disp = ConfusionMatrixDisplay(
-        confusion_matrix=conf_matrix, display_labels=["Mismatch", "Match"]
+        confusion_matrix=conf_matrix, display_labels=["Negative", "Positive"]
     )
     disp.plot(cmap="Blues", values_format="d")
     plt.title(title)
