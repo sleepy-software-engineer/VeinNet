@@ -3,12 +3,14 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
+import csv
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from dataloader import DataLoader
 from model import Model
-from sklearn.metrics import auc, roc_curve
+from sklearn.metrics import auc, confusion_matrix, roc_curve
 from torch.nn import BCELoss
 from torch_optimizer import Lookahead, RAdam
 
@@ -18,22 +20,77 @@ from utils.functions import mapping, split_verification_closed
 OUTPUT_PATH = "./src/verification/"
 
 
-def plot_roc_curve(fpr, tpr, roc_auc, directory):
-    """
-    Plots the Receiver Operating Characteristic (ROC) curve.
+def save_threshold_metrics(thresholds, far_list, frr_list, directory):
+    selected_thresholds = np.arange(0.1, 1.1, 0.1)
+    with open(directory + "out/threshold_metrics.csv", "w", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["Threshold", "FAR", "FRR"])
+        for selected_threshold in selected_thresholds:
+            index = (np.abs(thresholds - selected_threshold)).argmin()
+            csvwriter.writerow(
+                [
+                    thresholds[index],
+                    far_list[index],
+                    frr_list[index],
+                ]
+            )
 
-    Parameters:
-        fpr (list or numpy array): False Positive Rates.
-        tpr (list or numpy array): True Positive Rates.
-        roc_auc (float): Area Under the Curve (AUC).
-        directory (str): The directory where the ROC plot will be saved.
-    """
+
+def plot_det_curve(far_list, frr_list, directory):
+    plt.figure(figsize=(8, 6))
+    plt.plot(far_list, frr_list, label="DET Curve", color="b", linewidth=2)
+    plt.fill_between(far_list, frr_list, alpha=0.2, color="b", label="_nolegend_")
+    plt.plot(
+        [min(far_list), max(far_list)],
+        [min(far_list), max(far_list)],
+        color="gray",
+        linestyle="--",
+        label="Random Guess",
+    )
+    plt.xscale("log")
+    plt.yscale("log")
+
+    plt.xlabel("False Acceptance Rate (FAR)", fontsize=12)
+    plt.ylabel("False Rejection Rate (FRR)", fontsize=12)
+    plt.title("Detection Error Tradeoff (DET) Curve", fontsize=16)
+
+    plt.legend(loc="upper right")
+
+    plt.tight_layout()
+    plt.savefig(directory + "out/det_curve.png")
+    plt.close()
+
+
+def plot_confusion_matrix(y_true, y_pred, directory):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+
+    matrix = np.array([[tp, fn], [fp, tn]])
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    cax = ax.matshow(matrix, cmap="Blues")
+    plt.colorbar(cax)
+
+    for (i, j), val in np.ndenumerate(matrix):
+        ax.text(j, i, f"{val}", ha="center", va="center", color="black", fontsize=14)
+
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(["Positive (1)", "Negative (0)"])
+    ax.set_yticklabels(["Positive (1)", "Negative (0)"])
+    ax.set_xlabel("Predicted Label", fontsize=12)
+    ax.set_ylabel("True Label", fontsize=12)
+    plt.title("Confusion Matrix", fontsize=16)
+
+    plt.tight_layout()
+    plt.savefig(directory + "out/confusion_matrix.png")
+    plt.close()
+
+
+def plot_roc_curve(fpr, tpr, roc_auc, directory):
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, color="b", label=f"ROC Curve (AUC = {roc_auc:.4f})", linewidth=2)
-    plt.fill_between(fpr, tpr, alpha=0.2, color="b", label="_nolegend_")  # Shaded area
-    plt.plot(
-        [0, 1], [0, 1], color="gray", linestyle="--", label="Random Guess"
-    )  # Diagonal
+    plt.fill_between(fpr, tpr, alpha=0.2, color="b", label="_nolegend_")
+    plt.plot([0, 1], [0, 1], color="gray", linestyle="--", label="Random Guess")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
     plt.xlabel("False Positive Rate (FPR)")
@@ -105,12 +162,12 @@ def test(
         frr_list.append(frr)
 
     plot_far_vs_frr(far_list, frr_list, thresholds, directory)
-    # Compute ROC curve (FPR, TPR) and AUC
     fpr, tpr, _ = roc_curve(labels, probabilities, pos_label=1)
     roc_auc = auc(fpr, tpr)
-
-    # Plot ROC curve
     plot_roc_curve(fpr, tpr, roc_auc, directory)
+    plot_confusion_matrix(labels, (probabilities >= 0.5).astype(int), directory)
+    plot_det_curve(far_list, frr_list, directory)
+    save_threshold_metrics(thresholds, far_list, frr_list, directory)
 
 
 def train(
@@ -154,13 +211,13 @@ if __name__ == "__main__":
         torch.device("cuda" if torch.cuda.is_available() else "cpu")
     )
 
-    train(
-        model,
-        train_loader,
-        2,
-        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        OUTPUT_PATH,
-    )
+    # train(
+    #     model,
+    #     train_loader,
+    #     2,
+    #     torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    #     OUTPUT_PATH,
+    # )
 
     test(
         model,
