@@ -9,42 +9,44 @@ An interesting extension to this project for future exploration involves expandi
 
 \begin{figure}[h]
     \centering
-    \begin{tikzpicture}[
-        font=\sffamily,
-        >=stealth,
-        node distance=2cm,
-        every node/.style={align=center}
-    ]
-        \node[circle, draw, fill=blue!20, minimum size=1cm] (sample) {New\\sample};
+    \resizebox{0.4\textwidth}{!}{% Scale reduced to 40% of text width
+        \begin{tikzpicture}[
+            font=\sffamily,
+            >=stealth,
+            node distance=1cm,
+            every node/.style={align=center}
+        ]
+            \node[circle, draw, fill=blue!20, minimum size=1cm] (sample) {New\\sample};
 
-        \node[rectangle, draw, rounded corners, fill=gray!20, 
-              above left=1.2cm and 2cm of sample] (model1) {model 1};
-        \node[rectangle, draw, rounded corners, fill=cyan!20, 
-              above=1.2cm of sample] (model2) {model 2};
-        \node[rectangle, draw, rounded corners, fill=red!20, 
-              above right=1.2cm and 2cm of sample] (model3) {model 3};
+            \node[rectangle, draw, rounded corners, fill=gray!20, 
+                  above left=1.2cm and 2cm of sample] (model1) {model 1};
+            \node[rectangle, draw, rounded corners, fill=cyan!20, 
+                  above=1.2cm of sample] (model2) {model 2};
+            \node[rectangle, draw, rounded corners, fill=red!20, 
+                  above right=1.2cm and 2cm of sample] (model3) {model 3};
 
-        \node[above=1.0cm of model1] (pred1) {0};
-        \node[above=1.0cm of model2] (pred2) {0};
-        \node[above=1.0cm of model3] (pred3) {1};
+            \node[above=1.0cm of model1] (pred1) {0};
+            \node[above=1.0cm of model2] (pred2) {0};
+            \node[above=1.0cm of model3] (pred3) {1};
 
-        \node[above=1.4cm of pred2, font=\Large] (ens) {0};
-        \node[font=\footnotesize, above=3pt of ens] (ensLabel) 
-             {Ensemble’s prediction\\(e.g., majority vote)};
+            \node[above=1.4cm of pred2, font=\Large] (ens) {0};
+            \node[font=\footnotesize, above=3pt of ens] (ensLabel) 
+                 {Ensemble’s prediction\\(e.g., majority vote)};
 
-        \draw [->] (sample) -- (model1);
-        \draw [->] (sample) -- (model2);
-        \draw [->] (sample) -- (model3);
+            \draw [->] (sample) -- (model1);
+            \draw [->] (sample) -- (model2);
+            \draw [->] (sample) -- (model3);
 
-        \draw [->] (model1) -- (pred1);
-        \draw [->] (model2) -- (pred2);
-        \draw [->] (model3) -- (pred3);
+            \draw [->] (model1) -- (pred1);
+            \draw [->] (model2) -- (pred2);
+            \draw [->] (model3) -- (pred3);
 
-        \draw [->] (pred1) -- (ens);
-        \draw [->] (pred2) -- (ens);
-        \draw [->] (pred3) -- (ens);
+            \draw [->] (pred1) -- (ens);
+            \draw [->] (pred2) -- (ens);
+            \draw [->] (pred3) -- (ens);
 
-    \end{tikzpicture}
+        \end{tikzpicture}
+    } % End of resizebox
     \caption{Illustration of an ensemble learning strategy. Each model processes the same input and produces a prediction. These predictions are combined (e.g., through majority voting) to create the ensemble's final output.}
     \label{fig:ensemble}
 \end{figure}
