@@ -1,3 +1,14 @@
+\tikzset{
+startstop/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=red!30},
+process/.style={rectangle, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=blue!30},
+decision/.style={diamond, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=green!30},
+evaluation/.style={rectangle, rounded corners=0.2cm, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=yellow!50},
+roundmodel/.style={circle, minimum size=2.0cm, text centered, draw=black, fill=gray!50},
+flatgreen/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=green!50},
+purpleblock/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=purple!50},
+arrow/.style={thick,->,>=stealth}
+}
+
 \section{Experimental}
 This section describes the experimental setup introducing the 3 evaluation setups used to assess the performance of the proposed biometric system and the data splitting strategy used for each evaluation setup.
 
@@ -11,6 +22,34 @@ The evaluation was performed using three distinct types of evaluations:
 
     \item \textbf{Verification}: tests the system's ability to verify the identity of users. Genuine samples consist of images correctly matched to their claimed identities, while imposter samples are created by associating images with incorrect user identities to simulate attempts to mislead the system.
 \end{itemize}
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{0.7\columnwidth}{!}{% Scaled to 50% of the column width
+    \begin{tikzpicture}[node distance=1.8cm]
+    \node (input) [startstop] {\includegraphics[width=2.5cm]{./images/preprocessing/selected_image.jpg}};
+    \node (preprocess) [process, below of=input, yshift=-0.5cm] {Preprocessing};
+    \node (binary) [purpleblock, below of=preprocess, yshift=-0.5cm] {\includegraphics[width=2.5cm]{./images/preprocessing/binarize_image.png}};
+    \node (open) [evaluation, below left of=binary, xshift=-2cm, yshift=-1.5cm] {Identification Open};
+    \node (closed) [evaluation, below of=binary, yshift=-2cm] {Identification Closed};
+    \node (verify) [evaluation, below right of=binary, xshift=2cm, yshift=-1.5cm] {Verification};
+    \node (claimed) [startstop, above of=verify, yshift=2cm] {Claimed Identity};
+    \node (cnn) [roundmodel, below of=closed, yshift=-1.0cm] {CNN Model};
+    \node (output) [flatgreen, below of=cnn, yshift=-0.3cm] {Prediction};
+    \draw [arrow] (input) -- (preprocess);
+    \draw [arrow] (preprocess) -- (binary);
+    \draw [arrow] (binary) -- (open);
+    \draw [arrow] (binary) -- (closed);
+    \draw [arrow] (binary) -- (verify);
+    \draw [arrow] (verify) -- (cnn);
+    \draw [arrow] (claimed) -- (verify);
+    \draw [arrow] (open) -- (cnn);
+    \draw [arrow] (closed) -- (cnn);
+    \draw [arrow] (cnn) -- (output);
+    \end{tikzpicture}%
+    }
+    \caption{Diagram scaled}
+\end{figure}
 
 \subsection{Data Splitting}
 The dataset used in this study was split differently for the three evaluation setups:
