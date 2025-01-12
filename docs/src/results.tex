@@ -1,9 +1,137 @@
 \section{Evaluation Metrics}
 
+This chapter describes the evaluation metrics used to assess the performance of the biometric recognition system.
+
+\begin{itemize}
+
+    \item \textbf{False Acceptance Rate (FAR)}:  
+    The proportion of impostor samples incorrectly accepted by the system.  
+    \[
+    \text{FAR} = \frac{\text{Number of False Acceptances}}{\text{Total Number of Impostor Attempts}}
+    \]
+    A lower FAR indicates better system security.
+
+    \item \textbf{False Rejection Rate (FRR)}:  
+    The proportion of genuine samples incorrectly rejected by the system.  
+    \[
+    \text{FRR} = \frac{\text{Number of False Rejections}}{\text{Total Number of Genuine Attempts}}
+    \]
+    A lower FRR indicates better system usability.
+
+    \item \textbf{Equal Error Rate (EER)}:  
+    The point where the FAR and FRR are equal, providing a single measure of system performance.  
+    \[
+    \text{EER} = \text{FAR} = \text{FRR at Threshold}
+    \]
+    A lower EER signifies a more balanced system.
+
+    \item \textbf{Receiver Operating Characteristic (ROC) Curve}:  
+    Plots the True Positive Rate (TPR) against the False Positive Rate (FPR) at various thresholds.  
+    \[
+    \text{TPR} = \frac{\text{True Positives}}{\text{True Positives} + \text{False Negatives}}
+    \]
+    \[
+    \text{FPR} = \frac{\text{False Positives}}{\text{False Positives} + \text{True Negatives}}
+    \]
+    The Area Under the Curve (AUC) summarizes the ROC curve, where higher AUC values indicate better performance.
+
+    \item \textbf{Detection Error Tradeoff (DET) Curve}:  
+    A variation of the ROC curve that plots the FRR against the FAR on a logarithmic scale, providing insight into trade-offs between errors.
+
+    \item \textbf{Cumulative Match Characteristic (CMC) Curve}:  
+    Represents the probability of correct identification as a function of rank in a closed-set scenario.  
+    \begin{equation}
+        \small
+            \text{Rank-k Identification Rate} = 
+            \frac{\text{Number of Correct Identifications at Rank-k}}
+            {\text{Total Number of Queries}}
+    \end{equation}
+    Higher Rank-1 and rapid convergence to 1.0 indicate strong identification performance.
+
+    \item \textbf{Confusion Matrix}:  
+    Summarizes the system's performance in terms of True Positives (TP), True Negatives (TN), False Positives (FP), and False Negatives (FN).  
+    \[
+    \text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{Total Samples}}
+    \]
+    Provides a comprehensive view of the system's classification abilities.
+
+\end{itemize}
 \section{Results}
 
 \subsection{Identification with a Closed Set}
 
+The biometric system's performance for closed-set identification was evaluated using the Cumulative Match Characteristic (CMC) curve, which measures the probability of correct identification at various ranks.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{./images/plots/id-close/cmc_curve.png}
+    \caption{CMC Curve demonstrating the probability of identification across ranks for closed-set identification.}
+    \label{fig:cmc_curve}
+\end{figure}
+
+\textbf{CMC Curve}: The CMC curve indicates that the system achieves a Rank-1 identification rate of 83.50\%, highlighting its ability to correctly identify subjects in the top rank most of the time. The curve rapidly approaches a probability of 1.0 as the rank increases, demonstrating the system's reliability in closed-set scenarios where all subjects belong to the known population.
+
+Overall, the results from the CMC curve establish the system's strong identification performance in closed-set conditions, with high accuracy for identifying subjects within the top few ranks.
+
 \subsection{Identification with an Open Set}
 
+The biometric system's performance for open-set identification was evaluated using the Receiver Operating Characteristic (ROC) curve, plotting the Detection and Identification Rate (DIR) against the False Alarm Rate (FAR).
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\columnwidth]{./images/plots/id-open/watchlist_roc_curve.png}
+    \caption{Watchlist ROC Curve demonstrating the DIR vs. FAR for open-set identification.}
+    \label{fig:watchlist_roc_curve}
+\end{figure}
+
+\textbf{Watchlist ROC Curve}: The ROC curve demonstrates the system's effectiveness in maintaining a high Detection and Identification Rate (DIR) while minimizing the False Alarm Rate (FAR). The curve achieves strong performance, as evidenced by a consistent increase in DIR with lower FAR values. Threshold markers along the curve provide insights into the system's operating characteristics and trade-offs between detection and false alarms. 
+
+Overall, the evaluation results indicate that the system is capable of handling open-set identification scenarios effectively, distinguishing between known and unknown subjects with high reliability.
+
 \subsection{Verification}
+
+The biometric verification system was evaluated using False Acceptance Rate (FAR), False Rejection Rate (FRR), Equal Error Rate (EER), and Receiver Operating Characteristic (ROC) metrics.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \includegraphics[width=\textwidth]{./images/plots/ver/far_vs_frr.png}
+        \caption{FAR vs. FRR}
+        \label{fig:far_vs_frr}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \includegraphics[width=\textwidth]{./images/plots/ver/confusion_matrix.png}
+        \caption{Confusion Matrix}
+        \label{fig:confusion_matrix}
+    \end{subfigure}
+    \caption{FAR vs. FRR curve with the EER threshold and the Confusion Matrix.}
+    \label{fig:far_frr_confusion}
+\end{figure}
+
+\textbf{FAR vs. FRR Analysis}: The FAR and FRR curves intersect at a threshold of 0.5025, yielding an EER of 0.5025. This indicates a balanced trade-off between the acceptance of impostors and rejection of genuine users, critical for assessing verification performance.
+
+\textbf{Confusion Matrix}: The system achieved a good balance between true positives (158) and true negatives (153) while maintaining acceptable rates of false positives (42) and false negatives (46). This supports the system's robustness in distinguishing between genuine and impostor samples.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \includegraphics[width=\textwidth]{./images/plots/ver/roc_curve.png}
+        \caption{ROC Curve}
+        \label{fig:roc_curve}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \includegraphics[width=\textwidth]{./images/plots/ver/det_curve.png}
+        \caption{DET Curve}
+        \label{fig:det_curve}
+    \end{subfigure}
+    \caption{ROC and DET curves highlighting the system's performance.}
+    \label{fig:roc_det}
+\end{figure}
+
+\textbf{ROC Curve}: With an Area Under the Curve (AUC) of 0.8671, the ROC curve demonstrates strong discriminatory power between genuine and impostor samples, showcasing the system's reliability in verification tasks.
+
+\textbf{Detection Error Tradeoff (DET) Curve}: The DET curve highlights the system's error rates over a range of operating conditions. The downward trend reflects the system's ability to minimize errors as the threshold is optimized.
+
+Overall, the evaluation metrics indicate that the system achieves a reliable performance in biometric verification, effectively balancing FAR and FRR while providing a solid classification accuracy. These results establish the system's viability for biometric recognition applications.

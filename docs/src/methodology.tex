@@ -3,5 +3,338 @@
 
 \subsection{Data Preprocessing}
 
+\begin{enumerate}
+    \item \textbf{Image Loading and Cropping} \\
+    The palm vein image is loaded in grayscale mode using OpenCV: 
+    \[
+    I(x, y) = \text{cv2.imread}(f, \text{cv2.IMREAD\_GRAYSCALE})
+    \]
+    where \( I(x, y) \) represents the pixel intensity at coordinates \( (x, y) \). To isolate the palm region, the rightmost part of the image was cropped:
+    \[
+    I_{\text{cropped}}(x, y) = I(x, y), \quad \forall \, x \in [0, W-120]
+    \]
+    where \( W \) is the original width of the image.
+
+    \begin{figure}[!ht]
+        \centering
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/selected_image.jpg}
+            \caption{FAR vs. FRR}
+            \label{fig:far_vs_frr}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/cropped_image.png}
+            \caption{Confusion Matrix}
+            \label{fig:confusion_matrix}
+        \end{subfigure}
+        \caption{TODO}
+        \label{fig:far_frr_confusion}
+    \end{figure}
+
+    \item \textbf{Blurring and Thresholding} \\
+    A Gaussian blur was applied to smooth the image and reduce noise:
+    \[
+    I_{\text{blurred}}(x, y) = \frac{1}{2\pi\sigma^2} \sum_{i=-k}^{k} \sum_{j=-k}^{k} e^{-\frac{i^2 + j^2}{2\sigma^2}} \cdot I(x-i, y-j)
+    \]
+    Thresholding was then applied to convert the image to binary format:
+    \[
+    I_{\text{thresholded}}(x, y) =
+    \begin{cases}
+    255 & \text{if } I_{\text{blurred}}(x, y) \geq T, \\
+    0 & \text{if } I_{\text{blurred}}(x, y) < T
+    \end{cases}
+    \]
+    where \( T = 50 \).
+
+    \item \textbf{Contour Detection} \\
+    Contours were extracted from the binary image:
+    \[
+    C = \text{findContours}(I_{\text{thresholded}})
+    \]
+    The largest contour, corresponding to the hand region, was selected:
+    \[
+    C_{\text{largest}} = \max(C, \text{key=Area})
+    \]
+
+    \begin{figure}[!ht]
+        \centering
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/thresholded_image.png}
+            \caption{FAR vs. FRR}
+            \label{fig:far_vs_frr}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/contour_image.png}
+            \caption{Confusion Matrix}
+            \label{fig:confusion_matrix}
+        \end{subfigure}
+        \caption{TODO}
+        \label{fig:far_frr_confusion}
+    \end{figure}
+
+    \item \textbf{Convexity Defects Analysis} \\
+    The convex hull of the largest contour was computed:
+    \[
+    H = \text{convexHull}(C_{\text{largest}})
+    \]
+    Convexity defects, representing regions where the contour deviates inward from the hull, were identified:
+    \[
+    D = \text{convexityDefects}(C_{\text{largest}}, H)
+    \]
+
+    \item \textbf{Region of Interest (ROI) Extraction} \\
+    Key points from the convexity defects were used to define the palm's region of interest. The midpoint of a line connecting two key points was calculated:
+    \[
+    M = \left(\frac{x_1 + x_3}{2}, \frac{y_1 + y_3}{2}\right)
+    \]
+    A perspective transformation was applied to rectify the region:
+    \[
+    I_{\text{rectified}} = \text{warpPerspective}(I, \text{TransformMatrix})
+    \]
+
+    \begin{figure}[!ht]
+        \centering
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/far_points_line_perpendicular_square_image.png}
+            \caption{FAR vs. FRR}
+            \label{fig:far_vs_frr}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/rectified_image.png}
+            \caption{Confusion Matrix}
+            \label{fig:confusion_matrix}
+        \end{subfigure}
+        \caption{TODO}
+        \label{fig:far_frr_confusion}
+    \end{figure}
+
+    \item \textbf{Feature Enhancement} \\
+    Histogram equalization was applied to improve contrast:
+    \[
+    I_{\text{equalized}} = \text{HE}(I_{\text{rectified}})
+    \]
+    A Gabor filter was then used to emphasize vein patterns:
+    \[
+    G(x, y) = \exp\left(-\frac{x'^2 + \gamma^2 y'^2}{2\sigma^2}\right) \cos\left(2\pi\frac{x'}{\lambda} + \psi\right)
+    \]
+
+    \item \textbf{CLAHE} \\
+    Contrast Limited Adaptive Histogram Equalization (CLAHE) was performed iteratively to refine local contrasts:
+    \[
+    I_{\text{CLAHE}} = \text{CLAHE}(I_{\text{filtered}}, \text{clipLimit}, \text{tileGridSize})
+    \]
+
+    \begin{figure}[!ht]
+        \centering
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/rectified_image_equalized.png}
+            \caption{FAR vs. FRR}
+            \label{fig:far_vs_frr}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/gabor_filtered_image.png}
+            \caption{Confusion Matrix}
+            \label{fig:confusion_matrix}
+        \end{subfigure}
+        \caption{TODO}
+        \label{fig:far_frr_confusion}
+    \end{figure}
+
+    \item \textbf{Binary Thresholding} \\
+    The processed image was binarized to isolate vein patterns:
+    \[
+    I_{\text{binary}}(x, y) =
+    \begin{cases}
+    255 & \text{if } I_{\text{CLAHE}}(x, y) \geq T_{\text{final}}, \\
+    0 & \text{otherwise}
+    \end{cases}
+    \]
+
+    \item \textbf{Visualization and Output} \\
+    Each preprocessing stage was visualized to verify correctness. The final binary images were saved for subsequent biometric analysis.
+
+    \begin{figure}[!ht]
+        \centering
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/enhanced_image.png}
+            \caption{FAR vs. FRR}
+            \label{fig:far_vs_frr}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.48\columnwidth}
+            \includegraphics[width=\textwidth]{./images/preprocessing/binarize_image.png}
+            \caption{Confusion Matrix}
+            \label{fig:confusion_matrix}
+        \end{subfigure}
+        \caption{TODO}
+        \label{fig:far_frr_confusion}
+    \end{figure}
+
+\end{enumerate}
 
 \subsection{Model Architecture}
+Convolutional Neural Networks (CNNs) are a class of deep learning models specifically designed to process and analyze grid-like data such as images. They use layers of convolutional filters to automatically detect and learn hierarchical patterns in the data, making them particularly effective for image recognition and classification tasks \cite{726791}.
+
+The structure of the neural network models developed for the palm print identification system is detailed here. These models share a similar core structure, with differences in specific components to address their respective objectives: closed-set identification, open-set identification, and verification tasks.
+
+\textbf{Core Structure}: Both models rely on the same convolutional backbone for feature extraction. This shared structure consists of four convolutional layers that extract features from the input images. Each convolutional layer increases the number of feature maps while reducing spatial dimensions using ReLU activation followed by max pooling. After the convolutional layers, the flattened feature maps are passed through a linear layer to produce a 128-dimensional representation of the image features. This linear layer, acting as a dense fully connected layer, is essential for transforming the high-dimensional convolutional features into a compact representation suitable for further processing. This feature extraction backbone forms the foundation of both models.
+
+\begin{equation}
+    f(x) = \max(0, x)
+    \label{eq:relu}
+\end{equation}
+
+\begin{equation}
+    y_{i,j} = \max_{(m,n) \in R_{i,j}} x_{m,n}
+    \label{eq:maxpool}
+\end{equation}
+
+This model is designed for classifying palm print images into predefined classes, such as 100 patients. Following the shared backbone, the model includes a linear layer for reducing the dimensionality, a dropout layer to prevent overfitting, and a final classification layer with a softmax activation function. The output provides class probabilities, enabling closed-set identification.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[
+        font=\sffamily,
+        node distance=0.6cm and 1.5cm,
+        scale=0.6,
+        transform shape,
+        >={Stealth[open]},
+        every node/.style={align=center},
+        conv/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=blue!10},
+        relu/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=green!10},
+        pool/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=yellow!10},
+        linear/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=orange!10},
+        fc/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=red!10},
+        drop/.style={draw, dashed, minimum width=2cm, minimum height=1cm, rounded corners, fill=gray!10},
+        softmax/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=purple!10},
+        input/.style={font=\large},
+        output/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=cyan!10, font=\large}
+    ]
+    \node[input] (input) {Input \\ $128 \times 128$};
+    \node[conv, below=of input] (conv1) {Conv1 \\ $16@128 \times 128$};
+    \node[relu, below=of conv1] (relu1) {ReLU};
+    \node[pool, below=of relu1] (pool1) {MaxPool \\ $2\times 2$};
+    \node[conv, below=of pool1] (conv2) {Conv2 \\ $32@64 \times 64$};
+    \node[relu, below=of conv2] (relu2) {ReLU};
+    \node[pool, below=of relu2] (pool2) {MaxPool \\ $2\times 2$};
+    
+    \node[conv, right=3cm of input] (conv3) {Conv3 \\ $64@32 \times 32$};
+    \node[relu, below=of conv3] (relu3) {ReLU};
+    \node[pool, below=of relu3] (pool3) {MaxPool \\ $2\times 2$};
+    \node[conv, below=of pool3] (conv4) {Conv4 \\ $128@16 \times 16$};
+    \node[relu, below=of conv4] (relu4) {ReLU};
+    \node[linear, below=of relu4] (linear1) {Linear \\ Flatten to $32*32*32$};
+
+    \node[fc, right=3cm of conv3] (fc1) {FC1 \\ 128};
+    \node[drop, below=of fc1] (drop1) {Dropout \\ 0.5};
+    \node[linear, below=of drop1] (linear2) {Linear \\ $128 \to \text{Num Classes}$};
+    \node[fc, below=of linear2] (fc2) {FC2 \\ Num Classes};
+    \node[softmax, below=of fc2] (softmax) {Softmax};
+    \node[output, below=of softmax] (output) {Output \\ Class Predictions};
+
+    \draw[->] (input.south) -- (conv1.north);
+    \draw[->] (conv1.south) -- (relu1.north);
+    \draw[->] (relu1.south) -- (pool1.north);
+    \draw[->] (pool1.south) -- (conv2.north);
+    \draw[->] (conv2.south) -- (relu2.north);
+    \draw[->] (relu2.south) -- (pool2.north);
+    \draw[->] (pool2.east) -- ++(1.0,0) |- (conv3.west);
+    \draw[->] (conv3.south) -- (relu3.north);
+    \draw[->] (relu3.south) -- (pool3.north);
+    \draw[->] (pool3.south) -- (conv4.north);
+    \draw[->] (conv4.south) -- (relu4.north);
+    \draw[->] (relu4.south) -- (linear1.north);
+
+    \draw[->] (linear1.east) -- ++(1.0,0) |- (fc1.west);
+    \draw[->] (fc1.south) -- (drop1.north);
+    \draw[->] (drop1.south) -- (linear2.north);
+    \draw[->] (linear2.south) -- (fc2.north);
+    \draw[->] (fc2.south) -- (softmax.north);
+    \draw[->] (softmax.south) -- (output.north);
+
+    \end{tikzpicture}
+    \caption{Forward pass of a Convolutional Neural Network (CNN) divided into three columns, including Input and Output. The output provides class predictions.}
+    \label{fig:model-3-columns-final-with-output}
+\end{figure}
+
+This model extends functionality to handle open-set identification and verification tasks. After the shared backbone, the model uses a linear layer to extract a compact feature representation, followed by label embeddings to capture label-specific information. It concatenates the 128-dimensional image features with the label embeddings to form a combined 256-dimensional vector. This fused representation is passed through a fully connected layer and sigmoid activation to output a verification score between 0 and 1, indicating the likelihood of a valid image-label pair.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[
+        font=\sffamily,
+        node distance=0.6cm and 1.5cm,
+        scale=0.6,
+        transform shape,
+        >={Stealth[open]},
+        every node/.style={align=center},
+        conv/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=blue!10},
+        relu/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=green!10},
+        pool/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=yellow!10},
+        embed/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=orange!10},
+        linear/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=red!10},
+        concat/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=purple!10},
+        sigmoid/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=gray!10},
+        input/.style={font=\large},
+        output/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=cyan!10}
+    ]
+
+    % Column 1: Input and Conv Layers
+    \node[input] (image_input) {Input Image \\ $128 \times 128$};
+    \node[conv, below=of image_input] (conv1) {Conv1 \\ $16@128 \times 128$};
+    \node[relu, below=of conv1] (relu1) {ReLU};
+    \node[pool, below=of relu1] (pool1) {MaxPool \\ $2\times 2$};
+    \node[conv, below=of pool1] (conv2) {Conv2 \\ $32@64 \times 64$};
+    \node[relu, below=of conv2] (relu2) {ReLU};
+    \node[pool, below=of relu2] (pool2) {MaxPool \\ $2\times 2$};
+
+    % Column 2: Remaining Conv Layers
+    \node[conv, right=3cm of image_input] (conv3) {Conv3 \\ $64@32 \times 32$};
+    \node[relu, below=of conv3] (relu3) {ReLU};
+    \node[pool, below=of relu3] (pool3) {MaxPool \\ $2\times 2$};
+    \node[conv, below=of pool3] (conv4) {Conv4 \\ $128@16 \times 16$};
+    \node[relu, below=of conv4] (relu4) {ReLU};
+    \node[linear, below=of relu4] (linear1) {Linear1 \\ Transform $128 \to 128$};
+    \node[linear, below=of linear1] (fc_image) {FC Image \\ 128 Features};
+
+    % Column 3: Label Embedding Path and Output
+    \node[input, right=3cm of conv3] (label_input) {Label \\ One-hot};
+    \node[embed, below=of label_input] (label_embed) {Label Embedding \\ 128 Features};
+    \node[concat, below=of label_embed, yshift=-0.5cm] (concat) {Concatenation \\ $128 + 128$};
+    \node[linear, below=of concat, yshift=-0.5cm] (linear2) {Linear2 \\ $256 \to 128$};
+    \node[linear, below=of linear2, yshift=-0.5cm] (fc_final) {FC Final \\ $128 \to 1$};
+    \node[sigmoid, below=of fc_final, yshift=-0.5cm] (output) {Output \\ Sigmoid};
+
+    % Arrows for Image Path
+    \draw[->] (image_input.south) -- (conv1.north);
+    \draw[->] (conv1.south) -- (relu1.north);
+    \draw[->] (relu1.south) -- (pool1.north);
+    \draw[->] (pool1.south) -- (conv2.north);
+    \draw[->] (conv2.south) -- (relu2.north);
+    \draw[->] (relu2.south) -- (pool2.north);
+    \draw[->] (pool2.east) -- ++(1.0,0) |- (conv3.west);
+    \draw[->] (conv3.south) -- (relu3.north);
+    \draw[->] (relu3.south) -- (pool3.north);
+    \draw[->] (pool3.south) -- (conv4.north);
+    \draw[->] (conv4.south) -- (relu4.north);
+    \draw[->] (relu4.south) -- (linear1.north);
+    \draw[->] (linear1.south) -- (fc_image.north);
+
+    % Arrows for Label Path
+    \draw[->] (label_input.south) -- (label_embed.north);
+
+    % Arrows for Concatenation and Output
+    \draw[->] (fc_image.east) -- ++(1.0,0) |- (concat.west);
+    \draw[->] (label_embed.south) -- ++(0,-0.8) -| (concat.north);
+    \draw[->] (concat.south) -- (linear2.north);
+    \draw[->] (linear2.south) -- (fc_final.north);
+    \draw[->] (fc_final.south) -- (output.north);
+
+    \end{tikzpicture}
+    \caption{Neural network layout with added Linear1 (image features), Linear2 (concatenated features), FC Final, and Sigmoid layers for output.}
+    \label{fig:updated-with-fc-final}
+\end{figure}
