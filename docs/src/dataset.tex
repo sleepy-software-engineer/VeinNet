@@ -1,22 +1,22 @@
 \section{Dataset}
+This section provides an overview of the CASIA Multi-Spectral Palmprint Image Database, including data acquisition details and a description of the dataset.
 
 \subsection{Data Aquisition}
 
-The self-designed imaging device for acquiring hand images \cite{hao2008multispectral,hao2007comparative} is shown in Figure \ref{fig:device_architecture}. The device operates in a contact-free environment, during the imaging process:
+The self-designed imaging device for acquiring hand images \cite{hao2008multispectral,hao2007comparative} is shown in Figure \ref{fig:device_architecture}. The device operates in a contact-free environment, The imaging process involves the following steps:
+
 \begin{enumerate}
     \item Illumination Setup:
         \begin{itemize}
-            \item The device uses six groups of LEDs with wavelengths ranging from violet to near-infrared. These LEDs are turned on sequentially, allowing a time-division strategy for acquiring multispectral images.
-            \item This setup ensures the acquisition of images under varying illumination conditions, covering different layers of the skin due to light absorption and scattering properties.
+            \item The device uses six groups of LEDs (violet to near-infrared) activated sequentially, employing a time-division strategy to acquire multispectral images under varying illumination, capturing different skin layers through light absorption and scattering. 
         \end{itemize}
     \item Reflective Imaging:
         \begin{itemize}
-            \item Images are captured in a reflective manner under a sheltered environment, ensuring consistent illumination and reducing external noise.
-            \item Each group of LEDs is arranged circularly and diffused using a ground glass to provide even illumination across the hand.
+            \item Images are captured reflectively in a sheltered environment with consistent illumination, while circularly arranged LED groups, diffused with ground glass, ensure even lighting across the hand. 
         \end{itemize}
     \item Contact-Free Operation:
         \begin{itemize}
-            \item Subjects are instructed to naturally stretch their hands, palms facing the camera, without any physical contact with a tangible surface or plate. This setup enhances hygiene and minimizes user resistance.
+            \item Subjects are instructed to naturally stretch their hands, palms facing the camera, without any physical contact with a tangible surface or plate. 
         \end{itemize}
     \item Sequential Image Capture:
         \begin{itemize}
@@ -28,7 +28,7 @@ The design allows for a detailed capture of both superficial and subsurface skin
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{./images/device-architecture.png}
+    \includegraphics[width=0.3\textwidth]{./images/device-architecture.png}
     \caption{Imaging Device Architecture for Hand Image Acquisition.}
     \label{fig:device_architecture}
 \end{figure}
@@ -39,7 +39,7 @@ The CASIA Multi-Spectral Palmprint Image Database consists of 7,200 palm images 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{./images/spectrums.png}
+    \includegraphics[width=0.3\textwidth]{./images/spectrums.png}
     \caption{Palmprint images from the CASIA Multi-Spectral Palmprint Image Database with the six spectral bands. Starting from the top-left corner and moving clockwise: 460 nm, 630 nm, 700 nm, 850 nm, 940 nm, and white light.}
     \label{fig:dataset_example}
 \end{figure}
