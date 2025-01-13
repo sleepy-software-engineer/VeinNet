@@ -4,95 +4,95 @@
 \subsection{Data Preprocessing}
 
 \begin{enumerate}
-    \item \textbf{Image Loading and Cropping} \\
-    The palm vein image is loaded in grayscale mode using OpenCV: 
-    \[
-    I(x, y) = \text{cv2.imread}(f, \text{cv2.IMREAD\_GRAYSCALE})
-    \]
-    where \( I(x, y) \) represents the pixel intensity at coordinates \( (x, y) \). To isolate the palm region, the rightmost part of the image was cropped:
-    \[
-    I_{\text{cropped}}(x, y) = I(x, y), \quad \forall \, x \in [0, W-120]
-    \]
+    \item \textbf{Image Loading and Cropping}
+    The palm vein image is loaded in grayscale mode using OpenCV imread function described in Equation \ref{eq:imread}. 
+    \begin{equation}
+        I(x, y) = \text{imread}(f, \text{GRAYSCALE})
+        \label{eq:imread}
+    \end{equation}
+
+    where \( I(x, y) \) represents the pixel intensity at coordinates \( (x, y) \). 
+    To isolate the palm region, the rightmost part of the image was cropped using Equation \ref{eq:crop}.
+    \begin{equation}
+        I_{\text{cropped}}(x, y) = I(x, y), \quad \forall \, x \in [0, W-120]
+        \label{eq:crop}
+    \end{equation} 
     where \( W \) is the original width of the image.
+   
+    Figure \ref{fig:selected_image} shows the input image selected for preprocessing, while Figure \ref{fig:cropped_image} displays the cropped image.
+
+    \newpage
 
     \begin{figure}[!ht]
         \centering
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/selected_image.jpg}
-            \caption{FAR vs. FRR}
-            \label{fig:far_vs_frr}
+            \caption{Input Image selected for preprocessing.}
+            \label{fig:selected_image}
         \end{subfigure}
         \hfill
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/cropped_image.png}
-            \caption{Confusion Matrix}
-            \label{fig:confusion_matrix}
+            \caption{Cropped Image after removing the rightmost part.} 
+            \label{fig:cropped_image}
         \end{subfigure}
-        \caption{TODO}
-        \label{fig:far_frr_confusion}
     \end{figure}
 
-    \item \textbf{Blurring and Thresholding} \\
-    A Gaussian blur was applied to smooth the image and reduce noise:
-    \[
-    I_{\text{blurred}}(x, y) = \frac{1}{2\pi\sigma^2} \sum_{i=-k}^{k} \sum_{j=-k}^{k} e^{-\frac{i^2 + j^2}{2\sigma^2}} \cdot I(x-i, y-j)
-    \]
-    Thresholding was then applied to convert the image to binary format:
-    \[
-    I_{\text{thresholded}}(x, y) =
-    \begin{cases}
-    255 & \text{if } I_{\text{blurred}}(x, y) \geq T, \\
-    0 & \text{if } I_{\text{blurred}}(x, y) < T
-    \end{cases}
-    \]
+    \item \textbf{Blurring and Thresholding}
+    A Gaussian blur was applied to smooth the image and reduce noise and Thresholding was then applied to convert the image to binary format:
+    \begin{equation}
+        I_{\text{thresholded}}(x, y) =
+        \begin{cases}
+        255 & \text{if } I_{\text{blur}}(x, y) \geq T, \\
+        0 & \text{if } I_{\text{blur}}(x, y) < T
+        \end{cases}   
+    \end{equation} 
     where \( T = 50 \).
 
-    \item \textbf{Contour Detection} \\
-    Contours were extracted from the binary image:
-    \[
-    C = \text{findContours}(I_{\text{thresholded}})
-    \]
-    The largest contour, corresponding to the hand region, was selected:
-    \[
-    C_{\text{largest}} = \max(C, \text{key=Area})
-    \]
+    Figure \ref{fig:thresholded_image} shows the thresholded image after applying Gaussian blur.
+
+    \item \textbf{Contour Detection}
+    Contours were extracted from the binary image. The largest contour, corresponding to the hand region, was selected. 
 
     \begin{figure}[!ht]
         \centering
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/thresholded_image.png}
-            \caption{FAR vs. FRR}
-            \label{fig:far_vs_frr}
+            \caption{Thresholded Image after Gaussian Blur.} 
+            \label{fig:thresholded_image}
         \end{subfigure}
         \hfill
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/contour_image.png}
-            \caption{Confusion Matrix}
-            \label{fig:confusion_matrix}
+            \caption{Contour Image after extracting contours.}
+            \label{fig:contour_image}
         \end{subfigure}
-        \caption{TODO}
-        \label{fig:far_frr_confusion}
     \end{figure}
 
-    \item \textbf{Convexity Defects Analysis} \\
-    The convex hull of the largest contour was computed:
-    \[
-    H = \text{convexHull}(C_{\text{largest}})
-    \]
-    Convexity defects, representing regions where the contour deviates inward from the hull, were identified:
-    \[
-    D = \text{convexityDefects}(C_{\text{largest}}, H)
-    \]
+    Figure \ref{fig:contour_image} shows the contour image after extracting contours.
 
-    \item \textbf{Region of Interest (ROI) Extraction} \\
-    Key points from the convexity defects were used to define the palm's region of interest. The midpoint of a line connecting two key points was calculated:
-    \[
-    M = \left(\frac{x_1 + x_3}{2}, \frac{y_1 + y_3}{2}\right)
-    \]
-    A perspective transformation was applied to rectify the region:
-    \[
-    I_{\text{rectified}} = \text{warpPerspective}(I, \text{TransformMatrix})
-    \]
+    \item \textbf{Convexity Defects Analysis}
+    The convex hull of the largest contour was calculated using the convexHull function from OpenCV described in Equation \ref{eq:convex_hull} where \( C_{\text{largest}} \) represents the largest contour.
+    
+    \begin{equation}
+        H = \text{convexHull}(C_{\text{largest}})
+        \label{eq:convex_hull}
+    \end{equation}
+
+    Convexity defects, representing regions where the contour deviates inward from the hull, were identified using OpenCV's convexityDefects function described in Equation \ref{eq:convexity_defects}.
+
+    \begin{equation}
+        D = \text{convexityDefects}(C_{\text{largest}}, H)
+        \label{eq:convexity_defects}
+    \end{equation}
+
+    \item \textbf{Region of Interest (ROI) Extraction} 
+    Key points from the convexity defects were used to define the palm's region of interest. The midpoint of a line connecting two key points was calculated to determine the center of the palm using Equation \ref{eq:midpoint}. Once the midpoint was identified as the hand center,  
+    
+    \begin{equation}
+        M = \left(\frac{x_1 + x_3}{2}, \frac{y_1 + y_3}{2}\right)
+        \label{eq:midpoint}
+    \end{equation}    
 
     \begin{figure}[!ht]
         \centering
@@ -131,17 +131,15 @@
         \centering
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/rectified_image_equalized.png}
-            \caption{FAR vs. FRR}
-            \label{fig:far_vs_frr}
+            \caption{Image after applying Histogram Equalization, Perspective Transformation, and Warp Perspective.}
+            \label{fig:rectified_image_equalized}
         \end{subfigure}
         \hfill
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/gabor_filtered_image.png}
-            \caption{Confusion Matrix}
-            \label{fig:confusion_matrix}
+            \caption{Image after applying Gabor Filter.}
+            \label{fig:gabor_filtered_image}
         \end{subfigure}
-        \caption{TODO}
-        \label{fig:far_frr_confusion}
     \end{figure}
 
     \item \textbf{Binary Thresholding} \\
@@ -154,26 +152,25 @@
     \end{cases}
     \]
 
-    \item \textbf{Visualization and Output} \\
-    Each preprocessing stage was visualized to verify correctness. The final binary images were saved for subsequent biometric analysis.
+    \item \textbf{Resize and Save} 
+    Each image after the binary thresholding step was resized to \( 128 \times 128 \) pixels to standardize the input size for the neural network model.
 
     \begin{figure}[!ht]
         \centering
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/enhanced_image.png}
-            \caption{FAR vs. FRR}
-            \label{fig:far_vs_frr}
+            \caption{Enhanced image after Using CLAHE and Gaussian Blur.}
+            \label{fig:enhanced_image}
         \end{subfigure}
         \hfill
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/binarize_image.png}
-            \caption{Confusion Matrix}
-            \label{fig:confusion_matrix}
+            \caption{Binary Thresholding of the image.}
+            \label{fig:binarize_image}
         \end{subfigure}
-        \caption{TODO}
-        \label{fig:far_frr_confusion}
     \end{figure}
 
+    Figure \ref{fig:binarize_image} shows the final output of the preprocessing pipeline.
 \end{enumerate}
 
 \subsection{Model Architecture}
