@@ -1,0 +1,55 @@
+\section{Conclusion and Future Work}
+This sections provides a final conclusion the project results and suggest pontential future work starting from the current implementation.
+
+\subsection{Conclusion}
+In this work, a straightforward yet highly effective CNN-based identification system was developed for the purpose of palm vein identification. Despite the architecture's simplicity, it demonostrated good results in all 3 experimental setups. The implementation effectively processed palm images, leveraging CNNs to extract features for biometric recognition. The system's performance demonstrates its ability to handle palm images as biometric inputs, making it suitable for real-world identity verification tasks.
+
+Overall, this implementation highlights that even a relatively uncomplicated CNN architecture can deliver strong results, making it an appealing solution for practical vein-based identification systems.
+
+\subsection{Future Work}
+
+An interesting extension to this project for future exploration involves expanding the focus beyond the current palm-based Region of Interest (ROI). Instead of restricting the system solely to the palm vein pattern, it would be beneficial to consider additional hand characteristics such as overall hand geometry, finger length and spacing, and other distinctive biometric features of the hand. Using these complementary features would allow us to develop multiple specialized models, one dedicated to palm veins (as implemented in this project), another concentrating on hand geometry, another on finger structure, and so on. By utilizing an ensemble learning strategy (see Figure~\ref{fig:ensemble}), where each specialized model contributes its prediction, we could combine these outputs into a final, more robust decision. This multi-model, ensemble-based approach has the potential to significantly improve the overall accuracy and reliability of the system.
+
+\begin{figure}[h]
+    \centering
+    \resizebox{0.4\textwidth}{!}{
+        \begin{tikzpicture}[
+            font=\sffamily,
+            >=stealth,
+            node distance=1cm,
+            every node/.style={align=center}
+        ]
+            \node[circle, draw, fill=blue!20, minimum size=1cm] (sample) {New\\sample};
+
+            \node[rectangle, draw, rounded corners, fill=gray!20, 
+                  above left=1.2cm and 2cm of sample] (model1) {model 1};
+            \node[rectangle, draw, rounded corners, fill=cyan!20, 
+                  above=1.2cm of sample] (model2) {model 2};
+            \node[rectangle, draw, rounded corners, fill=red!20, 
+                  above right=1.2cm and 2cm of sample] (model3) {model 3};
+
+            \node[above=1.0cm of model1] (pred1) {0};
+            \node[above=1.0cm of model2] (pred2) {0};
+            \node[above=1.0cm of model3] (pred3) {1};
+
+            \node[above=1.4cm of pred2, font=\Large] (ens) {0};
+            \node[font=\footnotesize, above=3pt of ens] (ensLabel) 
+                 {Ensemble’s prediction\\(e.g., majority vote)};
+
+            \draw [->] (sample) -- (model1);
+            \draw [->] (sample) -- (model2);
+            \draw [->] (sample) -- (model3);
+
+            \draw [->] (model1) -- (pred1);
+            \draw [->] (model2) -- (pred2);
+            \draw [->] (model3) -- (pred3);
+
+            \draw [->] (pred1) -- (ens);
+            \draw [->] (pred2) -- (ens);
+            \draw [->] (pred3) -- (ens);
+
+        \end{tikzpicture}
+    } % End of resizebox
+    \caption{Illustration of an ensemble learning strategy. Each model processes the same input and produces a prediction. These predictions are combined (e.g., through majority voting) to create the ensemble's final output.}
+    \label{fig:ensemble}
+\end{figure}
