@@ -47,16 +47,16 @@ This sections describes the Data Preprocessing pipeline used for the Palm Image 
     \end{equation} 
     where \( T = 50 \).
 
-    Figure \ref{fig:thresholded_image} shows the thresholded image after applying Gaussian blur.
+    Figure \ref{fig:thresholded_image} shows the thresholded image.
 
     \item \textbf{Contour Detection}
-    Contours were extracted from the binary image. The largest contour, corresponding to the hand region, was selected. 
+    Contours were extracted from the binary image using OpenCV findContours function. The largest contour, corresponding to the hand region, was selected. 
 
     \begin{figure}[!ht]
         \centering
         \begin{subfigure}[t]{0.48\columnwidth}
             \includegraphics[width=\textwidth]{./images/preprocessing/thresholded_image.png}
-            \caption{Thresholded Image after Gaussian Blur.} 
+            \caption{Thresholded Image.} 
             \label{fig:thresholded_image}
         \end{subfigure}
         \hfill
@@ -86,6 +86,8 @@ This sections describes the Data Preprocessing pipeline used for the Palm Image 
 
     \item \textbf{Region of Interest (ROI) Extraction} 
     Once the convexity defects are calculated, the region of interest (ROI) is determined by identifying key farthest points from the contour, sorting them based on depth and position, and using these points to define the primary axis of interest. The midpoint and direction vector of this axis are computed, enabling the derivation of a perpendicular point. These geometric constructs are then used to generate, align, and position a square ROI.
+
+    Figure \ref{fig:far_points_line_perpendicular_square_image} shows the far points calculated and the line and perpendicular line drawn to the ROI square. While Figure \ref{fig:rectified_image} shows the extracted ROI square from the image.
 
     \begin{figure}[!ht]
         \centering
@@ -150,6 +152,8 @@ This sections describes the Data Preprocessing pipeline used for the Palm Image 
     0 & \text{otherwise}
     \end{cases}
     \]
+
+    Where \( T_{\text{final}} = 110 \).
 
     \item \textbf{Resize and Save} 
     Each image after the binary thresholding step was resized to \( 128 \times 128 \) pixels to standardize the input size for the neural network model.
@@ -223,12 +227,12 @@ The structure of the neural network models developed for the palm vein identific
     \node[pool, below=of relu3] (pool3) {MaxPool \\ $2\times 2$};
     \node[conv, below=of pool3] (conv4) {Conv4 \\ $128@16 \times 16$};
     \node[relu, below=of conv4] (relu4) {ReLU};
-    \node[linear, below=of relu4] (linear1) {Linear \\ Flatten to $32*32*32$};
+    \node[linear, below=of relu4] (linear1) {Linear \\ Flatten $32*32*32 \to $128};
 
-    \node[fc, right=3cm of conv3] (fc1) {FC1 \\ 128};
+    \node[fc, right=3cm of conv3] (fc1) {FC1};
     \node[drop, below=of fc1] (drop1) {Dropout \\ 0.5};
     \node[linear, below=of drop1] (linear2) {Linear \\ $128 \to \text{Num Classes}$};
-    \node[fc, below=of linear2] (fc2) {FC2 \\ Num Classes};
+    \node[fc, below=of linear2] (fc2) {FC2};
     \node[softmax, below=of fc2] (softmax) {Softmax};
     \node[output, below=of softmax] (output) {Output \\ Class Predictions};
 
@@ -257,7 +261,7 @@ The structure of the neural network models developed for the palm vein identific
     \label{fig:model-1}
 \end{figure}
 
-\textbf{Model 2} The CNN Model Architecture presented in Figure \ref{fig:model-2} is used for Verification. Designed with the goal of verifiying the authenticity of a given image-label pair, this model uses a shared backbone to extract features from the input image. The model then uses a linear layer to extract a compact feature representation, followed by label embeddings to capture label-specific information. It concatenates the 128-dimensional image features with the label embeddings to form a combined 256-dimensional vector. This fused representation is passed through a fully connected layer and sigmoid activation to output a verification score between 0 and 1, indicating the likelihood of a valid image-label pair.
+\textbf{Model 2} The CNN Model Architecture presented in Figure \ref{fig:model-2} is used for Verification. Designed with the goal of verifiying the authenticity of a given image-label pair, this model uses a shared backbone to extract features from the input image. The model then uses a linear layer to extract a compact feature representation, followed by label embeddings to capture label-specific information. It concatenates the 128-dimensional image features with the label embeddings to form a combined 256-dimensional vector. This fused representation is passed through a fully connected layer and sigmoid activation to output a verification score between 0 and 1.
 
 \begin{figure}[h!]
     \centering
@@ -271,12 +275,12 @@ The structure of the neural network models developed for the palm vein identific
         conv/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=blue!10},
         relu/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=green!10},
         pool/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=yellow!10},
-        embed/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=orange!10},
-        linear/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=red!10},
+        embed/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=gray!10},
+        linear/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=orange!10},
         concat/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=purple!10},
-        sigmoid/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=gray!10},
+        sigmoid/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=blue!10},
         input/.style={font=\large},
-        output/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=cyan!10}
+        output/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=cyan!10, font=\large}
     ]
     \node[input] (image_input) {Input Image \\ $128 \times 128$};
     \node[conv, below=of image_input] (conv1) {Conv1 \\ $16@128 \times 128$};
@@ -290,14 +294,14 @@ The structure of the neural network models developed for the palm vein identific
     \node[pool, below=of relu3] (pool3) {MaxPool \\ $2\times 2$};
     \node[conv, below=of pool3] (conv4) {Conv4 \\ $128@16 \times 16$};
     \node[relu, below=of conv4] (relu4) {ReLU};
-    \node[linear, below=of relu4] (linear1) {Linear1 \\ Transform $128 \to 128$};
-    \node[linear, below=of linear1] (fc_image) {FC Image \\ 128 Features};
+    \node[linear, below=of relu4] (linear1) {Linear \\ Flatten $32*32*32 \to $128};
+    \node[linear, below=of linear1] (fc_image) {FC Image};
     \node[input, right=3cm of conv3] (label_input) {Label \\ One-hot};
     \node[embed, below=of label_input] (label_embed) {Label Embedding \\ 128 Features};
     \node[concat, below=of label_embed, yshift=-0.5cm] (concat) {Concatenation \\ $128 + 128$};
     \node[linear, below=of concat, yshift=-0.5cm] (linear2) {Linear2 \\ $256 \to 128$};
-    \node[linear, below=of linear2, yshift=-0.5cm] (fc_final) {FC Final \\ $128 \to 1$};
-    \node[sigmoid, below=of fc_final, yshift=-0.5cm] (output) {Output \\ Sigmoid};
+    \node[linear, below=of linear2, yshift=-0.5cm] (fc_final) {FC Fina};
+    \node[output, below=of fc_final, yshift=-0.5cm] (output) {Output \\ Class Predictions};
 
     \draw[->] (image_input.south) -- (conv1.north);
     \draw[->] (conv1.south) -- (relu1.north);
