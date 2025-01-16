@@ -25,7 +25,7 @@ The evaluation was performed using three distinct types of evaluations:
 
 \begin{figure}[!ht]
     \centering
-    \resizebox{0.56\columnwidth}{!}{
+    \resizebox{0.7\columnwidth}{!}{
     \begin{tikzpicture}[node distance=1.8cm]
     \node (input) [startstop] {\includegraphics[width=2.5cm]{./images/preprocessing/selected_image.jpg}};
     \node (preprocess) [process, below of=input, yshift=-0.5cm] {Preprocessing};
@@ -51,17 +51,16 @@ The evaluation was performed using three distinct types of evaluations:
     \caption{Experimental Pipeline}
 \end{figure}
 
-\newpage
 
 \subsection{Data Splitting}
 To ensure consistent data processing, only images of the left hand were selected from the dataset. This decision was based on the observation that left-hand images generally show fewer imperfections, such as skin damages, which could introduce variability and noise. Additionally, the 850 nm spectrum was chosen for image acquisition. This wavelength was selected because it primarily captures palm vein patterns, avoiding interference from extraneous details such as palm lines that are more visible at the 940 nm spectrum.
 
-The dataset used in this study was split differently for the three evaluation setups:
+The dataset used in this study was split differently for the three evaluation setups, where 4 images are used for Training and the remaining 2 images for Testing.
 
-\textbf{Identification with a Closed Set} includes all patients in the dataset, and their images are divided into training and test sets. The first four images per patient are used for training and the remaining 2 images are used for testing. This setup ensures that all enrolled patients contribute images to the training and testing phases, facilitating evaluation in a controlled, closed-set scenario.
+\textbf{Identification with a Closed Set} includes all patients in the dataset. This setup ensures that all enrolled patients contribute images to the training and testing phases, facilitating evaluation in a controlled, closed-set scenario.
 
-\textbf{Identification with an Open Set} 70\% of patients are randomly selected as known, with their images split into training (first four images) and testing (remaining 2 images). The remaining 30\% serve as unknown patients, with their images used solely for testing to assess the system's ability to handle unenrolled users. 
+\textbf{Identification with an Open Set} 70\% of patients are randomly selected as known. The remaining 30\% serve as unknown patients, with their images used solely for testing to assess the system's ability to handle unenrolled users. 
 
-\textbf{Verification} includes genuine and imposter samples for evaluation. For each patient, the first four images are used for training, and the remaining 2 images are used for testing. Genuine samples consist of matching the correct image to the claimed identity, while imposter samples are created by pairing images from different patients, simulating attempts to impersonate other users. 
+\textbf{Verification} includes genuine and imposter samples for evaluation. Genuine samples consist of matching the correct image to the claimed identity, while imposter samples are created by pairing images from different patients, simulating attempts to impersonate other users. 
 
 To ensure consistency and reproducibility across all splits, a fixed random seed was used during shuffling. This guarantees that the data partitioning remains consistent across different runs and experiments.

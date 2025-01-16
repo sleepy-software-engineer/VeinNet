@@ -6,14 +6,14 @@ The evaluation metrics used to measure the performance of the Biometric Systems 
     \item \textbf{False Acceptance Rate (FAR)}:  
     Percentage of impostor samples incorrectly accepted by the system.  
     \[
-    \text{FAR} = \frac{\text{Number of False Acceptances}}{\text{Total Number of Attempts}} \times 100
+    \text{FAR} = \frac{\text{Number of False Acceptances}}{\text{Total Number of Impostor Attempts}} \times 100
     \]
     Lower FAR values indicate a more secure system while a higher FAR signifies a higher risk of impostor acceptance.
     
     \item \textbf{False Rejection Rate (FRR)}:  
     Percentage of genuine samples incorrectly rejected by the system.  
     \[
-    \text{FRR} = \frac{\text{Number of False Rejections}}{\text{Total Number of Attempts}} \times 100
+    \text{FRR} = \frac{\text{Number of False Rejections}}{\text{Total Number of Genuine Attempts}} \times 100
     \]
     Lower FRR values indicate a more reliable system while a higher FRR signifies a higher risk of genuine rejection.
 
@@ -110,7 +110,7 @@ The biometric verification system was evaluated using False Acceptance Rate (FAR
     \end{subfigure}
 \end{figure}
 
-\textbf{FAR vs. FRR Analysis}: The FAR and FRR curves intersect at a threshold of 0.5025, yielding an EER of 0.5025. This indicates a balanced trade-off between the acceptance of impostors and rejection of genuine users, critical for assessing verification performance.
+\textbf{FAR vs. FRR Analysis}: The FAR and FRR curves intersect at a threshold of 0.5025, yielding an EER of 0.5025. This indicates a balanced trade-off between the acceptance of impostors and rejection of genuine users.
 
 \textbf{Confusion Matrix}: The system achieved a good balance between true positives (158) and true negatives (153) while maintaining acceptable rates of false positives (42) and false negatives (46).
 
