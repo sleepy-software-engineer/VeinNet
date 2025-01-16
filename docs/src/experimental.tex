@@ -25,7 +25,7 @@ The evaluation was performed using three distinct types of evaluations:
 
 \begin{figure}[!ht]
     \centering
-    \resizebox{0.7\columnwidth}{!}{
+    \resizebox{0.56\columnwidth}{!}{
     \begin{tikzpicture}[node distance=1.8cm]
     \node (input) [startstop] {\includegraphics[width=2.5cm]{./images/preprocessing/selected_image.jpg}};
     \node (preprocess) [process, below of=input, yshift=-0.5cm] {Preprocessing};
@@ -50,6 +50,8 @@ The evaluation was performed using three distinct types of evaluations:
     }
     \caption{Experimental Pipeline}
 \end{figure}
+
+\newpage
 
 \subsection{Data Splitting}
 To ensure consistent data processing, only images of the left hand were selected from the dataset. This decision was based on the observation that left-hand images generally show fewer imperfections, such as skin damages, which could introduce variability and noise. Additionally, the 850 nm spectrum was chosen for image acquisition. This wavelength was selected because it primarily captures palm vein patterns, avoiding interference from extraneous details such as palm lines that are more visible at the 940 nm spectrum.

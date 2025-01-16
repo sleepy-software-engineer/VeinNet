@@ -195,11 +195,13 @@ The structure of the neural network models developed for the palm vein identific
 
 \textbf{Model 1} The CNN Model Architecture presented in Figure \ref{fig:model-1} is used for the Open and Closed Set Identification. Designed with the goal of identifying a predefined number of classes, such as 100 patients, this model uses a shared backbone to extract features from the input image. The model then uses a linear layer to reduce the dimensionality of the features, followed by a fully connected layer to output class predictions using a softmax activation function. 
 
+\newpage
+
 \begin{figure}[ht!]
     \centering
     \begin{tikzpicture}[
         font=\sffamily,
-        node distance=0.6cm and 1.5cm,
+        node distance=0.5cm and 1.5cm,
         scale=0.6,
         transform shape,
         >={Stealth[open]},
@@ -229,10 +231,10 @@ The structure of the neural network models developed for the palm vein identific
     \node[relu, below=of conv4] (relu4) {ReLU};
     \node[linear, below=of relu4] (linear1) {Linear \\ Flatten $32*32*32 \to $128};
 
-    \node[fc, right=3cm of conv3] (fc1) {FC1};
+    \node[fc, right=3cm of conv3] (fc1) {FC 1};
     \node[drop, below=of fc1] (drop1) {Dropout \\ 0.5};
     \node[linear, below=of drop1] (linear2) {Linear \\ $128 \to \text{Num Classes}$};
-    \node[fc, below=of linear2] (fc2) {FC2};
+    \node[fc, below=of linear2] (fc2) {FC 2};
     \node[softmax, below=of fc2] (softmax) {Softmax};
     \node[output, below=of softmax] (output) {Output \\ Class Predictions};
 
@@ -267,7 +269,7 @@ The structure of the neural network models developed for the palm vein identific
     \centering
     \begin{tikzpicture}[
         font=\sffamily,
-        node distance=0.6cm and 1.5cm,
+        node distance=0.5cm and 1.5cm,
         scale=0.6,
         transform shape,
         >={Stealth[open]},
@@ -276,9 +278,10 @@ The structure of the neural network models developed for the palm vein identific
         relu/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=green!10},
         pool/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=yellow!10},
         embed/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=gray!10},
+        fc/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=red!10},
         linear/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=orange!10},
         concat/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=purple!10},
-        sigmoid/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=blue!10},
+        sigmoid/.style={draw, minimum width=2cm, minimum height=1cm, rounded corners, fill=purple!10},
         input/.style={font=\large},
         output/.style={draw, minimum width=1.5cm, minimum height=0.8cm, rounded corners, fill=cyan!10, font=\large}
     ]
@@ -295,13 +298,14 @@ The structure of the neural network models developed for the palm vein identific
     \node[conv, below=of pool3] (conv4) {Conv4 \\ $128@16 \times 16$};
     \node[relu, below=of conv4] (relu4) {ReLU};
     \node[linear, below=of relu4] (linear1) {Linear \\ Flatten $32*32*32 \to $128};
-    \node[linear, below=of linear1] (fc_image) {FC Image};
+    \node[fc, below=of linear1] (fc_image) {FC 1};
     \node[input, right=3cm of conv3] (label_input) {Label \\ One-hot};
-    \node[embed, below=of label_input] (label_embed) {Label Embedding \\ 128 Features};
+    \node[embed, below=of label_input] (label_embed) {Label Embedding \\ $\text{Num Classes} \to 128$};
     \node[concat, below=of label_embed, yshift=-0.5cm] (concat) {Concatenation \\ $128 + 128$};
-    \node[linear, below=of concat, yshift=-0.5cm] (linear2) {Linear2 \\ $256 \to 128$};
-    \node[linear, below=of linear2, yshift=-0.5cm] (fc_final) {FC Fina};
-    \node[output, below=of fc_final, yshift=-0.5cm] (output) {Output \\ Class Predictions};
+    \node[linear, below=of concat, yshift=-0.5cm] (linear2) {Linear \\ $256 \to 1$};
+    \node[fc, below=of linear2, yshift=-0.5cm] (fc_final) {FC 2};
+    \node[sigmoid, below=of fc_final, yshift=-0.5cm] (sigmoid) {Sigmoid};
+    \node[output, below=of sigmoid, yshift=-0.5cm] (output) {Output \\ Class Predictions};
 
     \draw[->] (image_input.south) -- (conv1.north);
     \draw[->] (conv1.south) -- (relu1.north);
@@ -317,11 +321,12 @@ The structure of the neural network models developed for the palm vein identific
     \draw[->] (relu4.south) -- (linear1.north);
     \draw[->] (linear1.south) -- (fc_image.north);
     \draw[->] (label_input.south) -- (label_embed.north);
-    \draw[->] (fc_image.east) -- ++(1.0,0) |- (concat.west);
+    \draw[->] (fc_image.east) -- ++(1.5,0) |- (concat.west);
     \draw[->] (label_embed.south) -- ++(0,-0.8) -| (concat.north);
     \draw[->] (concat.south) -- (linear2.north);
     \draw[->] (linear2.south) -- (fc_final.north);
-    \draw[->] (fc_final.south) -- (output.north);
+    \draw[->] (fc_final.south) -- (sigmoid.north);
+    \draw[->] (sigmoid.south) -- (output.north);
 
     \end{tikzpicture}
     \caption{Forward Pass of the CNN Model used for Verification.}
