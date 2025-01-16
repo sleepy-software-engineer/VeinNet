@@ -6,14 +6,14 @@ The evaluation metrics used to measure the performance of the Biometric Systems 
     \item \textbf{False Acceptance Rate (FAR)}:  
     Percentage of impostor samples incorrectly accepted by the system.  
     \[
-    \text{FAR} = \frac{\text{Number of False Acceptances}}{\text{Total Number of Attempts}} \times 100
+    \text{FAR} = \frac{\text{Number of False Acceptances}}{\text{Total Number of Impostor Attempts}} \times 100
     \]
     Lower FAR values indicate a more secure system while a higher FAR signifies a higher risk of impostor acceptance.
     
     \item \textbf{False Rejection Rate (FRR)}:  
     Percentage of genuine samples incorrectly rejected by the system.  
     \[
-    \text{FRR} = \frac{\text{Number of False Rejections}}{\text{Total Number of Attempts}} \times 100
+    \text{FRR} = \frac{\text{Number of False Rejections}}{\text{Total Number of Genuine Attempts}} \times 100
     \]
     Lower FRR values indicate a more reliable system while a higher FRR signifies a higher risk of genuine rejection.
 
@@ -31,7 +31,7 @@ The evaluation metrics used to measure the performance of the Biometric Systems 
     Represents the probability of correct identification as a function of rank in a closed-set scenario. Higher Rank-1 and rapid convergence to 1.0 indicate strong identification performance.
 
     \item \textbf{Confusion Matrix}:  
-    The confusion matrix is a tool used to evaluate the performance of a classification model. It consists of a table where the columns are \textit{Predicted Negative} and \textit{Predicted Positive}, while the rows are \textit{Real Negative} and \textit{Real Positive}, comparing the model's predictions with the actual classes of the dataset. Below is a generic representation of a confusion matrix:
+    The confusion matrix is a tool used to evaluate the performance of a classification model. It consists of a table where the columns are Predicted Negative and Predicted Positive, while the rows are Real Negative and Real Positive, comparing the model's predictions with the actual classes of the dataset. Below is a generic representation of a confusion matrix:
     \[
     \begin{array}{c|c|c}
           & \text{PN} & \text{PP} \\ \hline
@@ -76,9 +76,7 @@ The biometric system's performance for closed-set identification was evaluated u
     \label{fig:cmc_curve}
 \end{figure}
 
-\textbf{CMC Curve}: The CMC curve indicates that the system achieves a Rank-1 identification rate of 83.50\%, highlighting its ability to correctly identify subjects in the top rank most of the time. The curve rapidly approaches a probability of 1.0 as the rank increases, demonstrating the system's reliability in closed-set scenarios where all subjects belong to the known population.
-
-Overall, the results from the CMC curve establish the system's strong identification performance in closed-set conditions, with high accuracy for identifying subjects within the top few ranks.
+\textbf{CMC Curve}: The CMC curve indicates that the system achieves a Rank-1 identification rate of 83.50\%, highlighting its ability to correctly identify subjects in the top rank most of the time. The curve rapidly approaches a probability of 1.0 as the rank increases.
 
 \subsection{Identification with an Open Set}
 
@@ -92,8 +90,6 @@ The biometric system's performance for open-set identification was evaluated usi
 \end{figure}
 
 \textbf{Watchlist ROC Curve}: The ROC curve demonstrates the system's effectiveness in maintaining a high Detection and Identification Rate (DIR) while minimizing the False Alarm Rate (FAR). The curve achieves strong performance, as evidenced by a consistent increase in DIR with lower FAR values. Threshold markers along the curve provide insights into the system's operating characteristics and trade-offs between detection and false alarms. 
-
-Overall, the evaluation results indicate that the system is capable of handling open-set identification scenarios effectively, distinguishing between known and unknown subjects with high reliability.
 
 \subsection{Verification}
 
@@ -114,7 +110,7 @@ The biometric verification system was evaluated using False Acceptance Rate (FAR
     \end{subfigure}
 \end{figure}
 
-\textbf{FAR vs. FRR Analysis}: The FAR and FRR curves intersect at a threshold of 0.5025, yielding an EER of 0.5025. This indicates a balanced trade-off between the acceptance of impostors and rejection of genuine users, critical for assessing verification performance.
+\textbf{FAR vs. FRR Analysis}: The FAR and FRR curves intersect at a threshold of 0.5025, yielding an EER of 0.5025. This indicates a balanced trade-off between the acceptance of impostors and rejection of genuine users.
 
 \textbf{Confusion Matrix}: The system achieved a good balance between true positives (158) and true negatives (153) while maintaining acceptable rates of false positives (42) and false negatives (46).
 
@@ -136,5 +132,3 @@ The biometric verification system was evaluated using False Acceptance Rate (FAR
 \textbf{ROC Curve}: With an Area Under the Curve (AUC) of 0.8671, the ROC curve demonstrates strong discriminatory power between genuine and impostor samples.
 
 \textbf{Detection Error Tradeoff (DET) Curve}: The DET curve highlights the system's error rates over a range of operating conditions. The downward trend reflects the system's ability to minimize errors as the threshold is optimized.
-
-Overall, the evaluation metrics indicate that the system achieves a reliable performance in biometric verification, effectively balancing FAR and FRR while providing a solid classification accuracy. These results establish the system's viability for biometric recognition applications.

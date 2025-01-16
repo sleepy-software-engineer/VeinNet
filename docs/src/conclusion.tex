@@ -6,22 +6,18 @@ In this work, a straightforward yet highly effective CNN-based identification sy
 
 Overall, this implementation highlights that even a relatively uncomplicated CNN architecture can deliver strong results, making it an appealing solution for practical vein-based identification systems.
 
-\subsection{Future Work}
-
-An interesting extension to this project for future exploration involves expanding the focus beyond the current palm-based Region of Interest (ROI). Instead of restricting the system solely to the palm vein pattern, it would be beneficial to consider additional hand characteristics such as overall hand geometry, finger length and spacing, and other distinctive biometric features of the hand. Using these complementary features would allow us to develop multiple specialized models, one dedicated to palm veins (as implemented in this project), another concentrating on hand geometry, another on finger structure, and so on. By utilizing an ensemble learning strategy (see Figure~\ref{fig:ensemble}), where each specialized model contributes its prediction, we could combine these outputs into a final, more robust decision. This multi-model, ensemble-based approach has the potential to significantly improve the overall accuracy and reliability of the system.
-
 \begin{figure}[h]
     \centering
-    \resizebox{0.4\textwidth}{!}{
         \begin{tikzpicture}[
             font=\sffamily,
             >=stealth,
-            node distance=1cm,
+            scale=0.4,
+            node distance=0.2cm,
             every node/.style={align=center}
         ]
-            \node[circle, draw, fill=blue!20, minimum size=1cm] (sample) {New\\sample};
+            \node[circle, draw, fill=blue!20, minimum size=1cm] (sample) {Sample};
 
-            \node[rectangle, draw, rounded corners, fill=gray!20, 
+            \node[rectangle, draw, rounded corners, fill=green!20, 
                   above left=1.2cm and 2cm of sample] (model1) {model 1};
             \node[rectangle, draw, rounded corners, fill=cyan!20, 
                   above=1.2cm of sample] (model2) {model 2};
@@ -34,7 +30,7 @@ An interesting extension to this project for future exploration involves expandi
 
             \node[above=1.4cm of pred2, font=\Large] (ens) {0};
             \node[font=\footnotesize, above=3pt of ens] (ensLabel) 
-                 {Ensemble’s prediction\\(e.g., majority vote)};
+                 {Ensemble’s prediction};
 
             \draw [->] (sample) -- (model1);
             \draw [->] (sample) -- (model2);
@@ -49,7 +45,10 @@ An interesting extension to this project for future exploration involves expandi
             \draw [->] (pred3) -- (ens);
 
         \end{tikzpicture}
-    } % End of resizebox
     \caption{Illustration of an ensemble learning strategy. Each model processes the same input and produces a prediction. These predictions are combined (e.g., through majority voting) to create the ensemble's final output.}
     \label{fig:ensemble}
 \end{figure}
+
+\subsection{Future Work}
+
+An interesting extension to this project for future exploration involves expanding the focus beyond the current palm-based Region of Interest (ROI). Instead of restricting the system solely to the palm vein pattern, it would be beneficial to consider additional hand characteristics such as overall hand geometry, finger length and spacing, and other distinctive biometric features of the hand. Using these complementary features would allow us to develop multiple specialized models, one dedicated to palm veins (as implemented in this project), another concentrating on hand geometry, another on finger structure, and so on. By utilizing an ensemble learning strategy (see Figure~\ref{fig:ensemble}), where each specialized model contributes its prediction, we could combine these outputs into a final, more robust decision. 
